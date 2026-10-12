@@ -22,8 +22,12 @@ export class CartRepository {
     return {kind:'ok' as const};
   });}
   async setQuantity(userId:string,id:string,quantity:number){ return this.db.withTransaction(async tx=>{
-    const row=await tx.query(`SELECT c.id,c.product_id FROM cart_items c WHERE c.id=$1 AND c.user_id=$2 FOR UPDATE`,[id,userId]); if(!row.rows[0]) return {kind:'missing' as const};
-    const p=await this.lockProduct(row.rows[0].product_id,tx); if(!p||!p.is_active||p.deleted_at) return {kind:'unavailable' as const};
+    const lookup=await tx.query(`SELECT product_id FROM cart_items WHERE id=$1 AND user_id=$2`,[id,userId]);
+    if(!lookup.rows[0]) return {kind:'missing' as const};
+    const p=await this.lockProduct(lookup.rows[0].product_id,tx);
+    const row=await tx.query(`SELECT c.id,c.product_id FROM cart_items c WHERE c.id=$1 AND c.user_id=$2 FOR UPDATE`,[id,userId]);
+    if(!row.rows[0] || row.rows[0].product_id!==lookup.rows[0].product_id) return {kind:'missing' as const};
+    if(!p||!p.is_active||p.deleted_at) return {kind:'unavailable' as const};
     const other=await tx.query(`SELECT COALESCE(sum(quantity),0)::int AS quantity FROM cart_items WHERE user_id=$1 AND product_id=$2 AND id<>$3`,[userId,row.rows[0].product_id,id]);
     if(p.track_inventory&&!p.allow_backorder&&(Number(other.rows[0]?.quantity??0)+quantity)>p.inventory_quantity) return {kind:'stock' as const,available:Number(p.inventory_quantity)};
     await tx.query(`UPDATE cart_items SET quantity=$3,updated_at=now() WHERE id=$1 AND user_id=$2`,[id,userId,quantity]); return {kind:'ok' as const};

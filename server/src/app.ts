@@ -11,6 +11,7 @@ import { createCorsMiddleware, createGlobalRateLimiter, createHelmetMiddleware }
 import { PostgresSystemRepository } from './repositories/system.repository.js';
 import { AuthRepository } from './repositories/auth.repository.js';
 import { createApiRouter } from './routes/index.js';
+import { createGuestBookingRouter } from './routes/guest-booking.routes.js';
 import { SystemService } from './services/system.service.js';
 import { AuthService } from './services/auth.service.js';
 import { createAuthDeliveryProvider } from './providers/auth-delivery.provider.js';
@@ -158,6 +159,7 @@ export function createApp({ env, logger, database }: AppDependencies) {
   const mediaService = new MediaService(database, storageProvider, env.STORAGE_MAX_IMAGE_BYTES);
   const mediaController = new MediaController(mediaService);
 
+  app.use(env.API_PREFIX, createGuestBookingRouter(env, database));
   app.use(env.API_PREFIX, createApiRouter({ env, systemController, authController, authRepository, catalogController, mediaController, accountController, cartController, bookingController, technicianController, pricingController, checkoutController, paymentController, orderController, refundController, returnController, shippingController, notificationController, adminOperationsController, adminCatalogController, subscriptionController, opsController }));
   app.use(notFoundHandler);
   app.use(errorHandler);

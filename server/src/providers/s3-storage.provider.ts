@@ -36,7 +36,7 @@ export class S3CompatibleStorageProvider implements StorageProvider {
       bucket: this.env.STORAGE_BUCKET,
       size: input.body.byteLength,
       mimeType: input.mimeType,
-      etag: result.ETag?.replaceAll('"', ''),
+      ...(result.ETag ? { etag: result.ETag.replaceAll('"', '') } : {}),
       publicUrl: this.getPublicUrl(input.key),
     };
   }
@@ -48,7 +48,7 @@ export class S3CompatibleStorageProvider implements StorageProvider {
   async head(key: string) {
     try {
       const result = await this.client.send(new HeadObjectCommand({ Bucket: this.env.STORAGE_BUCKET, Key: key }));
-      return { exists: true, size: result.ContentLength, mimeType: result.ContentType, etag: result.ETag?.replaceAll('"', '') };
+      return { exists: true, ...(result.ContentLength !== undefined ? { size: result.ContentLength } : {}), ...(result.ContentType ? { mimeType: result.ContentType } : {}), ...(result.ETag ? { etag: result.ETag.replaceAll('"', '') } : {}) };
     } catch (error: any) {
       if (error?.$metadata?.httpStatusCode === 404 || error?.name === 'NotFound') return { exists: false };
       throw error;

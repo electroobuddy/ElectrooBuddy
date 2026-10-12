@@ -36,15 +36,15 @@ export class NotificationService{
         if(!enabled){suppressed.push(...row.requested_channels);await this.repo.finish(row,delivered,suppressed);processed++;continue;}
         let notificationId:string|null=null;
         if(row.requested_channels.includes('in_app')&&!delivered.includes('in_app')&&!suppressed.includes('in_app')){
-          if(ctx.preferences.in_app_notifications===false)suppressed.push('in_app');
+          if(ctx.preferences?.in_app_notifications===false)suppressed.push('in_app');
           else {notificationId=await this.repo.transaction(tx=>this.repo.createInApp(tx,row));delivered.push('in_app');await this.repo.log(row.user_id,notificationId,'delivered','in_app',null,{event_key:row.event_key});}
         }
         if(row.requested_channels.includes('email')&&!delivered.includes('email')&&!suppressed.includes('email')){
-          if(ctx.preferences.email_notifications===false||!ctx.email)suppressed.push('email');
+          if(ctx.preferences?.email_notifications===false||!ctx.email)suppressed.push('email');
           else try{const r=await this.delivery.sendEmail({to:ctx.email,subject:row.title,text:row.message});delivered.push('email');await this.repo.log(row.user_id,notificationId,'delivered','email',null,{message_id:r.messageId,event_key:row.event_key});}catch(e:any){errors.push(`email:${e.message}`);await this.repo.log(row.user_id,notificationId,'failed','email',e.message,{event_key:row.event_key});}
         }
         if(row.requested_channels.includes('push')&&!delivered.includes('push')&&!suppressed.includes('push')){
-          if(ctx.preferences.push_notifications===false||!ctx.subscriptions.length)suppressed.push('push');
+          if(ctx.preferences?.push_notifications===false||!ctx.subscriptions.length)suppressed.push('push');
           else {let sent=false;for(const sub of ctx.subscriptions){try{const r=await this.delivery.sendPush({token:sub.fcm_token,title:row.title,body:row.message,data:{eventType:row.event_type,orderId:String(row.order_id??''),returnId:String(row.return_id??'')}});sent=true;await this.repo.log(row.user_id,notificationId,'delivered','push',null,{message_id:r.messageId,subscription_id:sub.id,event_key:row.event_key});}catch(e:any){errors.push(`push:${e.message}`);await this.repo.log(row.user_id,notificationId,'failed','push',e.message,{subscription_id:sub.id,event_key:row.event_key});}}if(sent)delivered.push('push');}
         }
         await this.repo.finish(row,delivered,suppressed,errors.length?errors.join('; '):undefined);processed++;

@@ -44,7 +44,7 @@ export function createDatabaseClient(env: AppEnv, logger: Logger): DatabaseClien
   return {
     query: (text, values) => pool.query(text, values as unknown[] | undefined),
 
-    async withTransaction<T>(operation: (transaction: QueryableDatabase) => Promise<T>, options = {}) {
+    async withTransaction<T>(operation: (transaction: QueryableDatabase) => Promise<T>, options: TransactionOptions = {}) {
       const connection = await pool.connect();
       const isolationLevel = options.isolationLevel ?? 'READ COMMITTED';
       try {

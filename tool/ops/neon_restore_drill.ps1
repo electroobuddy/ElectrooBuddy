@@ -1,10 +1,16 @@
 param(
   [Parameter(Mandatory=$true)][string]$BackupFile,
-  [string]$TargetDatabaseUrl = $env:RESTORE_DRILL_DATABASE_URL
+  [string]$TargetDatabaseUrl = $env:RESTORE_DRILL_DATABASE_URL,
+  [string]$ConfirmDisposableDatabaseName
 )
 $ErrorActionPreference = "Stop"
 if (-not $TargetDatabaseUrl) { throw "Set RESTORE_DRILL_DATABASE_URL to a disposable database. Never use production." }
 if ($TargetDatabaseUrl -eq $env:DATABASE_URL -or $TargetDatabaseUrl -eq $env:MIGRATION_DATABASE_URL) { throw "Restore drill target must not equal the configured production/migration database URL." }
+if (-not $ConfirmDisposableDatabaseName) { throw "Pass -ConfirmDisposableDatabaseName with the exact name of a disposable database." }
+$targetUri = [uri]$TargetDatabaseUrl
+$actualName = [uri]::UnescapeDataString($targetUri.AbsolutePath.TrimStart('/'))
+if ($actualName -ne $ConfirmDisposableDatabaseName) { throw "Disposable target name mismatch. Refusing restore." }
+if ($actualName -notmatch '(?i)(drill|test|disposable|restore)') { throw "Target database name must identify a disposable restore/test database." }
 if (-not (Test-Path $BackupFile)) { throw "Backup file not found: $BackupFile" }
 if (-not (Get-Command pg_restore -ErrorAction SilentlyContinue)) { throw "pg_restore is required and was not found in PATH." }
 if (-not (Get-Command psql -ErrorAction SilentlyContinue)) { throw "psql is required and was not found in PATH." }

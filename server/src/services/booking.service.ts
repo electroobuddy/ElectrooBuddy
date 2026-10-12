@@ -3,14 +3,14 @@ import { AppError } from '../errors/app-error.js';
 import type { DatabaseClient, QueryableDatabase } from '../config/database.js';
 import type { BookingRepository } from '../repositories/booking.repository.js';
 const money=(v:number)=>Math.round((v+Number.EPSILON)*100)/100;
-export interface BookingCreateInput {requestId:string;serviceId?:string|null;isCustomService?:boolean;name:string;phone:string;email:string;address:string;exactLocation?:string|null;preferredDate:string;preferredTime:string;description?:string|null;customServiceDemand?:string|null;isSwitchWorking?:string|null;hasOldFan?:string|null;isElectricitySupplyOn?:string|null;couponCode?:string|null;useSubscription?:boolean;useFreeServiceCall?:boolean}
-export interface BookingQuoteInput {serviceId?:string|null;isCustomService?:boolean;customServiceDemand?:string|null;couponCode?:string|null;useSubscription?:boolean;useFreeServiceCall?:boolean}
+export interface BookingCreateInput {requestId:string;serviceId?:string|null|undefined;isCustomService?:boolean|undefined;name:string;phone:string;email:string;address:string;exactLocation?:string|null|undefined;preferredDate:string;preferredTime:string;description?:string|null|undefined;customServiceDemand?:string|null|undefined;isSwitchWorking?:string|null|undefined;hasOldFan?:string|null|undefined;isElectricitySupplyOn?:string|null|undefined;couponCode?:string|null|undefined;useSubscription?:boolean|undefined;useFreeServiceCall?:boolean|undefined}
+export interface BookingQuoteInput {serviceId?:string|null|undefined;isCustomService?:boolean|undefined;customServiceDemand?:string|null|undefined;couponCode?:string|null|undefined;useSubscription?:boolean|undefined;useFreeServiceCall?:boolean|undefined}
 
 type FinancialQuote={service:any;base:number;coupon:any|null;couponDiscount:number;subscription:any|null;subscriptionDiscount:number;benefit:string|null;final:number;selected:'coupon'|'subscription'|'none'};
 
 export class BookingService {
  constructor(private readonly db:DatabaseClient,private readonly repo:BookingRepository){}
- private async serviceFor(input:{serviceId?:string|null;isCustomService?:boolean;customServiceDemand?:string|null},tx:QueryableDatabase=this.db){
+ private async serviceFor(input:{serviceId?:string|null|undefined;isCustomService?:boolean|undefined;customServiceDemand?:string|null|undefined},tx:QueryableDatabase=this.db){
   let service:any=null;if(input.serviceId)service=await this.repo.getService(input.serviceId,tx);
   const demand=(input.customServiceDemand??'').trim();
   if(!service&&input.isCustomService&&demand.length>=20)service={id:null,title:`Custom: ${demand.slice(0,120)}`,service_charge:0,show_visit_charge:false,book_now_enabled:true};
@@ -51,14 +51,15 @@ export class BookingService {
   const token=randomBytes(32).toString('hex');const hash=createHash('sha256').update(token).digest('hex');
   const created=await this.db.withTransaction(async tx=>{
    await tx.query(`SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,[`booking:${userId}:${input.requestId}`]);const again=await this.repo.findIdempotent(userId,input.requestId,tx);if(again)return {booking:again,idempotent:true};
-   const q=await this.financialQuote(userId,{serviceId:input.serviceId,isCustomService:input.isCustomService,customServiceDemand:input.customServiceDemand??input.description,couponCode:input.couponCode,useSubscription:input.useSubscription,useFreeServiceCall:input.useFreeServiceCall},tx,true);
+   const q=await this.financialQuote(userId,{serviceId:input.serviceId??null,isCustomService:input.isCustomService??false,customServiceDemand:input.customServiceDemand??input.description??null,couponCode:input.couponCode??null,useSubscription:input.useSubscription??false,useFreeServiceCall:input.useFreeServiceCall??false},tx,true);
    const demand=(input.customServiceDemand??input.description??'').trim();
    const b=await this.repo.createFinancial({userId,requestId:input.requestId,serviceId:q.service.id,name:input.name,phone:input.phone,email:input.email,address:input.address,exactLocation:input.exactLocation??null,serviceType:q.service.title,customServiceDemand:q.service.id?null:demand,preferredDate:input.preferredDate,preferredTime:input.preferredTime,description:input.description??null,isSwitchWorking:input.isSwitchWorking??null,hasOldFan:input.hasOldFan??null,isElectricitySupplyOn:input.isElectricitySupplyOn??null,originalAmount:q.base,finalAmount:q.final,trackingTokenHash:hash,couponId:q.coupon?.id??null,couponCode:q.coupon?.code??null,couponDiscount:q.couponDiscount,userSubscriptionId:q.subscription?.id??null,subscriptionDiscount:q.subscriptionDiscount,benefit:q.benefit},tx);
+   if (!b) throw new Error('Booking creation returned no row');
    if(q.coupon){await tx.query(`UPDATE coupons SET used_count=used_count+1,updated_at=now() WHERE id=$1`,[q.coupon.id]);await tx.query(`INSERT INTO booking_financial_events(booking_id,user_id,event_type,coupon_id,amount) VALUES($1,$2,'coupon_consumed',$3,$4)`,[b.id,userId,q.coupon.id,q.couponDiscount]);}
    if(q.subscription&&q.benefit){await tx.query(`INSERT INTO subscription_benefits_usage(user_subscription_id,user_id,benefit_type,booking_id,description) VALUES($1,$2,$3,$4,$5)`,[q.subscription.id,userId,q.benefit,b.id,q.benefit==='service_call'?'Free service call used':'Subscription service discount used']);await tx.query(`INSERT INTO booking_financial_events(booking_id,user_id,event_type,user_subscription_id,benefit_type,amount) VALUES($1,$2,'subscription_benefit_consumed',$3,$4,$5)`,[b.id,userId,q.subscription.id,q.benefit,q.subscriptionDiscount]);}
    return {booking:b,idempotent:false};
   },{isolationLevel:'READ COMMITTED'});
-  if(created.idempotent)return {...this.map(created.booking),idempotent:true};const assignment=await this.repo.autoAssign(created.booking.id).catch(()=>({kind:'none'} as any));return {...this.map(created.booking),tracking_token:token,idempotent:false,technician:assignment.kind==='ok'?assignment.technician:null};
+  if (!created.booking) throw new Error('Booking transaction returned no row'); if(created.idempotent)return {...this.map(created.booking),idempotent:true};const assignment=await this.repo.autoAssign(created.booking.id).catch(()=>({kind:'none'} as any));return {...this.map(created.booking),tracking_token:token,idempotent:false,technician:assignment.kind==='ok'?assignment.technician:null};
  }
  async list(userId:string,status?:string){return (await this.repo.listOwn(userId,status)).map(x=>this.map(x));}
  async get(userId:string,id:string){const b=await this.repo.getOwn(userId,id);if(!b)throw new AppError(404,'BOOKING_NOT_FOUND','Booking not found');return this.map(b);}

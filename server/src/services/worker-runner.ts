@@ -39,9 +39,24 @@ export async function runManagedWorker(
     `INSERT INTO ops_worker_runs(worker_name,status,metadata) VALUES($1,'running',$2::jsonb) RETURNING id`,
     [workerName, JSON.stringify({ owner })]
   );
-  const runId = run.rows[0].id;
+  const runRow = run.rows[0]; if (!runRow) throw new Error('Worker run creation returned no row'); const runId = runRow.id;
+  // Renew the lease while the worker is active. Treat lease loss as a failure.
+  let leaseFailure: Error | null = null;
+  let renewing = false;
+  const heartbeat = setInterval(() => {
+    if (renewing || leaseFailure) return;
+    renewing = true;
+    void db.query(`UPDATE ops_worker_leases SET lease_until=now()+($3::text || ' seconds')::interval, updated_at=now()
+      WHERE worker_name=$1 AND lease_owner=$2 AND lease_until>now() RETURNING worker_name`,
+      [workerName, owner, String(leaseSeconds)])
+      .then((result) => { if (!result.rowCount) leaseFailure = new Error('Worker lease lost during execution'); })
+      .catch((error) => { leaseFailure = error instanceof Error ? error : new Error(String(error)); })
+      .finally(() => { renewing = false; });
+  }, Math.max(1000, Math.floor(leaseSeconds * 1000 / 3)));
+  heartbeat.unref();
   try {
     const result = await operation();
+    if (leaseFailure) throw leaseFailure;
     const processed = result && typeof result === 'object' && typeof result.processed === 'number' ? result.processed : null;
     await db.query(`UPDATE ops_worker_runs SET status='succeeded',finished_at=now(),duration_ms=$2,processed_count=$3,metadata=metadata||$4::jsonb WHERE id=$1`,
       [runId, Date.now()-started, processed, JSON.stringify({ result: result ?? null })]);
@@ -54,6 +69,7 @@ export async function runManagedWorker(
     await postAlert(env, { service:'electroobuddy-api', type:'worker_failure', workerName, runId, error:message, timestamp:new Date().toISOString() }).catch((alertError)=>logger.error({err:alertError},'Ops alert delivery failed'));
     throw error;
   } finally {
+    clearInterval(heartbeat);
     await db.query(`DELETE FROM ops_worker_leases WHERE worker_name=$1 AND lease_owner=$2`, [workerName, owner]).catch(()=>undefined);
   }
 }

@@ -1,3 +1,25 @@
+# Dependencies and generated output
 node_modules/
-dist/   
+**/node_modules/
+dist/
+**/dist/
+coverage/
+**/coverage/
+.vite/
+*.tsbuildinfo
+
+# Local secrets and environment overrides (keep examples)
 .env
+.env.*
+**/.env
+**/.env.*
+!.env.example
+!**/.env.example
+
+# Logs and local machine files
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/*.code-workspace

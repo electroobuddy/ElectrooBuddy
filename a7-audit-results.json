@@ -1,0 +1,47 @@
+{
+  "checks": [
+    {
+      "check": "migration checksums",
+      "status": "PASS",
+      "detail": "server/scripts/db-migrate.ts",
+      "remediation": null
+    },
+    {
+      "check": "drift returns nonzero",
+      "status": "PASS",
+      "detail": "server/scripts/db-status.ts",
+      "remediation": null
+    },
+    {
+      "check": "worker lease protection",
+      "status": "PASS",
+      "detail": "server/src/services/worker-runner.ts",
+      "remediation": null
+    },
+    {
+      "check": "lease heartbeat or enforced max runtime",
+      "status": "PASS",
+      "detail": "server/src/services/worker-runner.ts",
+      "remediation": null
+    },
+    {
+      "check": "backup checksum manifest",
+      "status": "PASS",
+      "detail": "tool/ops/neon_backup.ps1",
+      "remediation": null
+    },
+    {
+      "check": "restore checksum",
+      "status": "PASS",
+      "detail": "tool/ops/neon_restore_drill.ps1",
+      "remediation": null
+    },
+    {
+      "check": "explicit disposable-target confirmation",
+      "status": "PASS",
+      "detail": "tool/ops/neon_restore_drill.ps1",
+      "remediation": null
+    }
+  ],
+  "failed": 0
+}

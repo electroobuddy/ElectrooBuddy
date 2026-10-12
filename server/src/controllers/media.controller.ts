@@ -12,13 +12,13 @@ export class MediaController {
       claimedMimeType: req.file.mimetype,
       originalName: req.file.originalname,
       folder: typeof req.body.folder === 'string' ? req.body.folder : undefined,
-      userId: req.auth?.userId,
+      ...(req.auth?.userId ? { userId: req.auth.userId } : {}),
     });
     res.status(201).json({ success: true, data: result, requestId: req.requestId });
   };
 
   deleteAsset = async (req: Request, res: Response) => {
-    await this.service.deleteAsset(req.params.id);
+    await this.service.deleteAsset(String(req.params.id));
     res.status(204).end();
   };
 }

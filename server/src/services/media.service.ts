@@ -11,7 +11,7 @@ const FOLDERS = new Set(['products','offers','projects','team','categories','tes
 export class MediaService {
   constructor(private readonly db: DatabaseClient, private readonly storage: StorageProvider, private readonly maxBytes: number) {}
 
-  async uploadImage(input: { body: Buffer; claimedMimeType?: string; originalName?: string; folder?: string; userId?: string }) {
+  async uploadImage(input: { body: Buffer; claimedMimeType?:string|undefined; originalName?:string|undefined; folder?:string|undefined; userId?: string }) {
     if (!input.body.length) throw new AppError(400, 'EMPTY_UPLOAD', 'Image file is required');
     if (input.body.length > this.maxBytes) throw new AppError(413, 'UPLOAD_TOO_LARGE', `Image must be ${Math.floor(this.maxBytes / 1024 / 1024)}MB or smaller`);
 

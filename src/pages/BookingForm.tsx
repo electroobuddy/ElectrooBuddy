@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import { useServicesStore } from "@/stores/servicesStore";
 import { createAuthoritativeServiceBooking } from "@/lib/serviceBooking";
 import { quoteNativeBooking } from "@/lib/nativeBooking";
+import { createGuestBooking } from "@/lib/guestBookingApi";
 import type { BookingQuote } from "@/lib/apiContracts";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
@@ -210,10 +211,6 @@ const BookingForm = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (submitting) return;
-    if (!user) {
-      toast.error("Please sign in before booking a service.");
-      return;
-    }
 
     // Validate form
     const errs = validateBookingForm(form, { requireEmail: true, requireTime: true, requireDate: true });
@@ -245,15 +242,29 @@ const BookingForm = () => {
     try {
       const selectedService = bookingServices.find((svc) => svc.title === form.service_type);
       if (!selectedService?.id && form.service_type !== "Custom Service") throw new Error("Please select a valid service");
+      if (!user && (!selectedService?.id || form.service_type === "Custom Service")) {
+        throw new Error("Select a listed service to book without signing in. Custom requests require an account.");
+      }
       const bookingData = await withTimeout(
-        createAuthoritativeServiceBooking(form, {
+        user ? createAuthoritativeServiceBooking(form, {
           serviceId: selectedService?.id || "",
           couponCode: appliedCoupon?.success ? couponCode : undefined,
           useSubscription: Boolean(activeSubscription),
           useFreeServiceCall: Boolean(useFreeServiceCall),
           requestId: requestIdRef.current,
+        }) : createGuestBooking({
+          requestId: requestIdRef.current,
+          serviceId: selectedService!.id,
+          name: form.name.trim(),
+          phone: form.phone.trim(),
+          email: form.email.trim(),
+          address: form.address.trim(),
+          exactLocation: form.exact_location?.trim() || null,
+          preferredDate: form.preferred_date,
+          preferredTime: form.preferred_time,
+          description: form.description?.trim() || null,
         }),
-        12000,
+        17000,
         "booking-create"
       );
       const bookingId = bookingData.id;
@@ -827,6 +838,12 @@ const BookingForm = () => {
                   />
                 </div>
 
+                {!user && (
+                  <p className="text-sm text-zinc-500 dark:text-zinc-400">
+                    No account needed for listed services. Coupons, subscriptions, and custom services require sign-in.
+                    Save your private tracking code after submitting.
+                  </p>
+                )}
                 {/* Submit */}
                 <button
                   type="submit"

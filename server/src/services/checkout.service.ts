@@ -8,7 +8,7 @@ import { CheckoutRepository } from '../repositories/checkout.repository.js';
 const money=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
 const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 export interface CheckoutItemInput { productId:string; quantity:number; installationService:boolean }
-export interface CheckoutAddress { fullName:string; email:string; phone:string; addressLine1:string; addressLine2?:string|null; city:string; state:string; postalCode:string; landmark?:string|null; country?:string }
+export interface CheckoutAddress { fullName:string; email:string; phone:string; addressLine1:string; addressLine2?:string|null|undefined; city:string; state:string; postalCode:string; landmark?:string|null|undefined; country?:string }
 export interface CreateCheckoutInput { requestId:string; items:CheckoutItemInput[]; address:CheckoutAddress; paymentMethod:'cod'|'razorpay'; couponCode?:string|null }
 
 export class CheckoutService {

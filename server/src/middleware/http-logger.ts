@@ -1,4 +1,4 @@
-import pinoHttp from 'pino-http';
+import { pinoHttp } from 'pino-http';
 import type { Logger } from 'pino';
 
 export function httpLogger(logger: Logger) {

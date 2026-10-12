@@ -21,7 +21,7 @@ export class PaymentService {
     if(payment.providerOrderId!==order.razorpay_order_id) throw new AppError(409,'PAYMENT_ORDER_MISMATCH','Payment order mismatch');
     if(payment.amountMinor!==Math.round(Number(order.total_amount)*100)) throw new AppError(409,'PAYMENT_AMOUNT_MISMATCH','Payment amount does not match this order');
     if(payment.currency!=='INR') throw new AppError(409,'PAYMENT_CURRENCY_MISMATCH','Payment currency does not match this order');
-    if(!['captured','authorized'].includes(payment.status)) throw new AppError(409,'PAYMENT_NOT_AUTHORIZED','Payment is not captured or authorized');
+    if(payment.status!=='captured' || payment.captured!==true) throw new AppError(409,'PAYMENT_NOT_CAPTURED','Payment has not been captured');
   }
 
   async verifyUserPayment(userId:string,input:{orderId:string;razorpayPaymentId:string;razorpayOrderId:string;razorpaySignature:string}){
@@ -38,7 +38,7 @@ export class PaymentService {
       this.assertPayable(order);
       this.assertProviderPayment(order,payment);
       try{
-        const updated=await repo.finalizePaid(order,{id:payment.providerPaymentId,signature:input.razorpaySignature,providerStatus:payment.status,method:payment.method},'user_verify');
+        const updated=await repo.finalizePaid(order,{id:payment.providerPaymentId,signature:input.razorpaySignature,providerStatus:payment.status,method:payment.method??null},'user_verify');
         await repo.checkoutEvent(order.id,'payment.verified',{provider:'razorpay',paymentId:payment.providerPaymentId,status:payment.status});
         return {success:true,alreadyVerified:false,orderId:updated.id,orderNumber:updated.order_number};
       }catch(e:any){
@@ -76,7 +76,7 @@ export class PaymentService {
         this.assertPayable(order);
         this.assertProviderPayment(order,payment);
         try{
-          await repo.finalizePaid(order,{id:payment.providerPaymentId,providerStatus:payment.status,method:payment.method},'webhook');
+          await repo.finalizePaid(order,{id:payment.providerPaymentId,providerStatus:payment.status,method:payment.method??null},'webhook');
           await repo.checkoutEvent(order.id,'payment.webhook_confirmed',{provider:'razorpay',paymentId:payment.providerPaymentId,eventType});
           await repo.markPaymentEvent(event.id,'processed',null,order.id);
         }catch(e:any){
@@ -98,7 +98,7 @@ export class PaymentService {
       results.checked++;
       try{
         const payments=await this.provider.listOrderPayments(order.razorpay_order_id);
-        const match=payments.find(p=>['captured','authorized'].includes(p.status) && p.amountMinor===Math.round(Number(order.total_amount)*100) && p.currency==='INR');
+        const match=payments.find(p=>p.status==='captured' && p.captured===true && p.amountMinor===Math.round(Number(order.total_amount)*100) && p.currency==='INR');
         if(!match){ results.unchanged++; continue; }
         await this.db.withTransaction(async q=>{
           const repo=new PaymentRepository(q);
@@ -106,7 +106,7 @@ export class PaymentService {
           if(!locked || locked.payment_status==='paid') return;
           this.assertPayable(locked);
           this.assertProviderPayment(locked,match);
-          await repo.finalizePaid(locked,{id:match.providerPaymentId,providerStatus:match.status,method:match.method},'reconciliation');
+          await repo.finalizePaid(locked,{id:match.providerPaymentId,providerStatus:match.status,method:match.method??null},'reconciliation');
           await repo.checkoutEvent(locked.id,'payment.reconciled',{provider:'razorpay',paymentId:match.providerPaymentId,status:match.status});
         });
         results.confirmed++;

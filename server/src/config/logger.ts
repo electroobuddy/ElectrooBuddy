@@ -4,7 +4,7 @@ import type { AppEnv } from './env.js';
 export function createLogger(env: Pick<AppEnv, 'LOG_LEVEL' | 'NODE_ENV'>) {
   return pino({
     level: env.LOG_LEVEL,
-    base: env.NODE_ENV === 'production' ? undefined : { service: 'electroobuddy-api' },
+    base: env.NODE_ENV === 'production' ? null : { service: 'electroobuddy-api' },
     redact: {
       paths: [
         'req.headers.authorization',

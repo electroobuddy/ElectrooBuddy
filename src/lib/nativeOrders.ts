@@ -1,0 +1,13 @@
+import { nativeApiFetch } from './apiClient';
+import type { NativeOrder, NativeOrderLifecycle, NativeOrderTracking, PaymentOperationsResult } from './apiContracts';
+export const listNativeOrders=()=>nativeApiFetch<NativeOrder[]>('/orders');
+export const getNativeOrder=(id:string)=>nativeApiFetch<NativeOrder>(`/orders/${id}`);
+export const getNativeOrderLifecycle=(id:string)=>nativeApiFetch<NativeOrderLifecycle>(`/orders/${id}/lifecycle`);
+export const getNativeOrderByNumber=(orderNumber:string)=>nativeApiFetch<NativeOrder>(`/orders/by-number/${encodeURIComponent(orderNumber)}`);
+export const trackNativeOrder=(token:string)=>nativeApiFetch<NativeOrderTracking|null>('/order-tracking/lookup',{method:'POST',body:JSON.stringify({token})});
+export const cancelNativeOrder=(id:string)=>nativeApiFetch<NativeOrder>(`/orders/${id}/cancel`,{method:'POST'});
+export const listNativeAdminOrders=(signal?:AbortSignal)=>nativeApiFetch<NativeOrder[]>('/admin/orders',{signal});
+export const getNativeAdminOrder=(id:string)=>nativeApiFetch<NativeOrder>(`/admin/orders/${id}`);
+export const transitionNativeAdminOrder=(id:string,target:'confirmed'|'processing'|'cancelled')=>nativeApiFetch<NativeOrder>(`/admin/orders/${id}/transition`,{method:'POST',body:JSON.stringify({target})});
+export const archiveNativeAdminOrder=(id:string)=>nativeApiFetch<{archived:true}>(`/admin/orders/${id}/archive`,{method:'POST'});
+export const listNativePaymentOperations=()=>nativeApiFetch<PaymentOperationsResult>('/admin/orders/payment-operations');

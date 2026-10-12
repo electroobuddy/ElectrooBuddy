@@ -1,0 +1,2 @@
+import {loadEnv} from '../src/config/env.js';import {createDatabaseClient} from '../src/config/database.js';import {createLogger} from '../src/config/logger.js';import {OpsRepository} from '../src/repositories/ops.repository.js';
+const env=loadEnv(),db=createDatabaseClient(env,createLogger(env));try{console.log(JSON.stringify(await new OpsRepository(db).snapshot(env.OPS_STALE_WORKER_MINUTES),null,2));}finally{await db.close();}

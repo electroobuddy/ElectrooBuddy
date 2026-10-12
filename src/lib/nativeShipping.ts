@@ -1,0 +1,15 @@
+import {nativeApiFetch} from './apiClient';
+import type { FulfillmentOperationsResult, ShippingOperationResult, ShippingSettings } from './apiContracts';
+export const getNativeShippingSettings=()=>nativeApiFetch<ShippingSettings>('/admin/shipping/settings');
+export const saveNativeShippingSettings=(body:ShippingSettings)=>nativeApiFetch<ShippingSettings>('/admin/shipping/settings',{method:'PUT',body:JSON.stringify(body)});
+export const testNativeShipping=()=>nativeApiFetch<ShippingOperationResult>('/admin/shipping/test',{method:'POST'});
+export const createNativeShipment=(id:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/orders/${id}/shipment`,{method:'POST'});
+export const cancelNativeShipment=(id:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/orders/${id}/shipment/cancel`,{method:'POST'});
+export const syncNativeShipment=(id:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/orders/${id}/shipment/sync`,{method:'POST'});
+export const generateNativeShipmentDocuments=(id:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/orders/${id}/shipment/documents`,{method:'POST'});
+export const retryNativeShipment=(id:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/orders/${id}/shipment/retry`,{method:'POST'});
+export const getFulfillmentOperations=(limit=100)=>nativeApiFetch<FulfillmentOperationsResult>(`/admin/fulfillment/operations?limit=${limit}`);
+export const processFulfillmentNow=()=>nativeApiFetch<ShippingOperationResult>('/admin/fulfillment/process',{method:'POST'});
+export const createNativeReplacementShipment=(returnId:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/returns/${returnId}/replacement-shipment`,{method:'POST'});
+export const retryNativeReplacementShipment=(returnId:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/returns/${returnId}/replacement-shipment/retry`,{method:'POST'});
+export const generateNativeReplacementDocuments=(returnId:string)=>nativeApiFetch<ShippingOperationResult>(`/admin/returns/${returnId}/replacement-shipment/documents`,{method:'POST'});

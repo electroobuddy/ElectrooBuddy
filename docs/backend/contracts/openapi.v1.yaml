@@ -1,0 +1,608 @@
+openapi: 3.1.0
+info:
+  title: ElectrooBuddy API
+  version: 1.0.0
+  description: >-
+    Frozen Phase 0 HTTP contract. Express is the first implementation; a later PHP
+    implementation must preserve compatible paths, envelopes, auth semantics and domain authority.
+servers:
+  - url: /api/v1
+security:
+  - bearerAuth: []
+tags:
+  - name: System
+  - name: Auth
+  - name: Catalog
+  - name: Customer
+  - name: Commerce
+  - name: Booking
+  - name: Technician
+  - name: Subscription
+  - name: Notification
+  - name: Admin
+  - name: Webhook
+paths:
+  /health:
+    get:
+      tags: [System]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /ready:
+    get:
+      tags: [System]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /auth/register:
+    post:
+      tags: [Auth]
+      security: []
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /auth/login:
+    post:
+      tags: [Auth]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/refresh:
+    post:
+      tags: [Auth]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Error' }
+  /auth/logout:
+    post:
+      tags: [Auth]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /auth/logout-all:
+    post:
+      tags: [Auth]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /auth/me:
+    get:
+      tags: [Auth]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /auth/password-reset/request:
+    post:
+      tags: [Auth]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /auth/password-reset/confirm:
+    post:
+      tags: [Auth]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/Error' }
+  /auth/email-verification/resend:
+    post:
+      tags: [Auth]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /auth/email-verification/verify:
+    post:
+      tags: [Auth]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/Error' }
+  /users/me/profile:
+    get:
+      tags: [Customer]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    patch:
+      tags: [Customer]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '422': { $ref: '#/components/responses/ValidationError' }
+  /users/me/addresses:
+    get:
+      tags: [Customer]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Customer]
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+  /users/me/addresses/{id}:
+    patch:
+      tags: [Customer]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    delete:
+      tags: [Customer]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /users/me/addresses/{id}/default:
+    post:
+      tags: [Customer]
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /products:
+    get:
+      tags: [Catalog]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /products/{slug}:
+    get:
+      tags: [Catalog]
+      security: []
+      parameters:
+        - name: slug
+          in: path
+          required: true
+          schema: { type: string }
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '404': { $ref: '#/components/responses/Error' }
+  /services:
+    get:
+      tags: [Catalog]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /product-categories:
+    get:
+      tags: [Catalog]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /offers:
+    get:
+      tags: [Catalog]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /projects:
+    get:
+      tags: [Catalog]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /testimonials:
+    get:
+      tags: [Catalog]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /team-members:
+    get:
+      tags: [Catalog]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /site-settings:
+    get:
+      tags: [Catalog]
+      security: []
+      description: Returns only server-allowlisted public settings.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /cart:
+    get:
+      tags: [Commerce]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    delete:
+      tags: [Commerce]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /cart/items:
+    post:
+      tags: [Commerce]
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+  /checkout/quote:
+    post:
+      tags: [Commerce]
+      description: Server-authoritative quote. Browser monetary values are non-authoritative.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /checkout:
+    post:
+      tags: [Commerce]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '409': { $ref: '#/components/responses/Error' }
+  /payments/razorpay/verify:
+    post:
+      tags: [Commerce]
+      description: Authenticated Razorpay checkout callback verification. The server verifies HMAC, fetches the provider payment, validates order/amount/currency/status and finalizes the locked order exactly once.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+  /webhooks/razorpay:
+    post:
+      tags: [Webhook]
+      security: []
+      description: Razorpay raw-body webhook endpoint. Signature is verified with the dedicated webhook secret and events are deduplicated before processing.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '400': { $ref: '#/components/responses/Error' }
+  /orders:
+    get:
+      tags: [Commerce]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /orders/{id}/cancel:
+    post:
+      tags: [Commerce]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '409': { $ref: '#/components/responses/Error' }
+  /orders/{id}/refunds:
+    post:
+      tags: [Commerce]
+      description: Authenticated customer full remaining-balance Razorpay refund request. The request key is supplied in the JSON body and is durable/idempotent.
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '409': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+  /orders/{id}/returns:
+    post:
+      tags: [Commerce]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+  /bookings:
+    get:
+      tags: [Booking]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+    post:
+      tags: [Booking]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+  /bookings/{id}/cancel:
+    post:
+      tags: [Booking]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /subscription-plans:
+    get:
+      tags: [Subscription]
+      security: []
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /subscriptions/orders:
+    post:
+      tags: [Subscription]
+      parameters:
+        - $ref: '#/components/parameters/IdempotencyKey'
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+  /subscriptions/payments/verify:
+    post:
+      tags: [Subscription]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /notifications:
+    get:
+      tags: [Notification]
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /admin/orders/{id}/transition:
+    post:
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Error' }
+        '409': { $ref: '#/components/responses/Error' }
+  /admin/bookings/{id}/transition:
+    post:
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '403': { $ref: '#/components/responses/Error' }
+  /webhooks/razorpay:
+    post:
+      tags: [Webhook]
+      security: []
+      description: Requires provider signature verification against the raw request body.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Error' }
+  /webhooks/shiprocket:
+    post:
+      tags: [Webhook]
+      security: []
+      description: Requires configured Shiprocket webhook authentication and event idempotency.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Error' }
+  /admin/media/images:
+    post:
+      tags: [Admin]
+      description: Admin-only multipart image upload. Content is magic-byte validated and stored through StorageProvider.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+                folder: { type: string }
+      responses:
+        '201': { $ref: '#/components/responses/Success' }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+        '413': { $ref: '#/components/responses/Error' }
+        '415': { $ref: '#/components/responses/Error' }
+  /admin/media/{id}:
+    delete:
+      tags: [Admin]
+      parameters:
+        - $ref: '#/components/parameters/Id'
+      responses:
+        '204': { description: Media object deleted }
+        '401': { $ref: '#/components/responses/Error' }
+        '403': { $ref: '#/components/responses/Error' }
+  /order-tracking/lookup:
+    post:
+      summary: Secure public order tracking lookup by opaque tracking token
+      responses:
+        '200': { description: Minimal shipment-safe order state or null }
+  /orders:
+    get:
+      summary: List authenticated user's own orders
+      responses: { '200': { description: Own order list } }
+  /orders/by-number/{orderNumber}:
+    get:
+      summary: Read authenticated user's own order by order number
+      responses: { '200': { description: Own order } }
+  /orders/{id}:
+    get:
+      summary: Read authenticated user's own order by UUID
+      responses: { '200': { description: Own order } }
+  /orders/{id}/cancel:
+    post:
+      summary: Cancel an eligible unpaid order and release native inventory/coupon reservation atomically
+      responses:
+        '200': { description: Order cancelled }
+        '409': { description: Refund or shipment authority required }
+  /admin/orders:
+    get:
+      summary: Admin order worklist
+      responses: { '200': { description: Order list } }
+  /admin/orders/payment-operations:
+    get:
+      summary: Admin payment operations read model including refund records
+      responses: { '200': { description: Orders and refund read model } }
+  /admin/orders/{id}/transition:
+    post:
+      summary: Admin financial-state-safe order transition
+      responses: { '200': { description: Order transitioned } }
+  /admin/orders/{id}/archive:
+    post:
+      summary: Archive delivered or cancelled order while preserving financial records
+      responses: { '200': { description: Order archived } }
+
+  /refunds:
+    get:
+      tags: [Commerce]
+      description: Authenticated customer refund history from the native PostgreSQL refund ledger.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+  /admin/orders/{id}/refunds:
+    post:
+      tags: [Commerce]
+      description: Admin full or partial Razorpay refund request. Amount and provider state are validated server-side.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+        '409': { $ref: '#/components/responses/Error' }
+        '502': { $ref: '#/components/responses/Error' }
+  /admin/refunds/reconcile:
+    post:
+      tags: [Commerce]
+      description: Admin-triggered refund reconciliation against Razorpay.
+      responses:
+        '200': { $ref: '#/components/responses/Success' }
+
+  /public/contact:
+    post:
+      tags: [Customer]
+      security: []
+      summary: Submit an idempotent public contact message
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /public/newsletter:
+    post:
+      tags: [Customer]
+      security: []
+      summary: Subscribe an email address to the newsletter
+      responses: { '201': { $ref: '#/components/responses/Success' } }
+  /admin/messages:
+    get:
+      tags: [Admin]
+      summary: List contact messages from PostgreSQL
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/subscribers:
+    get:
+      tags: [Admin]
+      summary: List newsletter subscribers
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/users:
+    get:
+      tags: [Admin]
+      summary: List native users, profile and role projection
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+  /admin/system/dashboard:
+    get:
+      tags: [Admin]
+      summary: Read PostgreSQL database/system metrics and operational counts
+      responses: { '200': { $ref: '#/components/responses/Success' } }
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  parameters:
+    Id:
+      name: id
+      in: path
+      required: true
+      schema: { type: string, format: uuid }
+    IdOrSlug:
+      name: idOrSlug
+      in: path
+      required: true
+      schema: { type: string, minLength: 1, maxLength: 200 }
+    IdempotencyKey:
+      name: Idempotency-Key
+      in: header
+      required: true
+      schema: { type: string, minLength: 16, maxLength: 200 }
+  schemas:
+    ErrorBody:
+      type: object
+      required: [success, error]
+      properties:
+        success: { const: false }
+        error:
+          type: object
+          required: [code, message]
+          properties:
+            code: { type: string }
+            message: { type: string }
+            fields: { type: object, additionalProperties: true }
+    SuccessBody:
+      type: object
+      required: [success, data]
+      properties:
+        success: { const: true }
+        data: {}
+  responses:
+    Success:
+      description: Successful API response
+      headers:
+        X-Request-Id:
+          schema: { type: string }
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/SuccessBody' }
+    Error:
+      description: Stable safe error response
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorBody' }
+    ValidationError:
+      description: Request validation failed
+      content:
+        application/json:
+          schema: { $ref: '#/components/schemas/ErrorBody' }
+
+  /technician/application:
+    post:
+      summary: Submit or refresh the current user's technician application
+      responses: { '201': { description: Application saved } }
+  /technician/profile:
+    get:
+      summary: Get current technician profile
+      responses: { '200': { description: Technician profile } }
+    patch:
+      summary: Update self-service technician fields
+      responses: { '200': { description: Technician profile updated } }
+  /technician/dashboard:
+    get:
+      summary: Get current technician workload summary
+      responses: { '200': { description: Technician dashboard } }
+  /admin/technicians:
+    get:
+      summary: List technicians and workload
+      responses: { '200': { description: Technician list } }
+    post:
+      summary: Create an approved native technician account
+      responses: { '201': { description: Technician created } }
+  /admin/technicians/{id}/review:
+    post:
+      summary: Approve or reject technician application
+      responses: { '200': { description: Technician reviewed } }
+  /admin/technicians/{id}/disable:
+    post:
+      summary: Disable technician after active-booking guard
+      responses: { '200': { description: Technician disabled } }
+  /admin/bookings/{id}/operational:
+    patch:
+      summary: Update non-financial booking fields only
+      responses: { '200': { description: Booking updated } }
+  /admin/bookings/{id}/archive:
+    post:
+      summary: Archive completed or cancelled booking
+      responses: { '200': { description: Booking archived } }
+
+  /pricing/quote:
+    post:
+      summary: Calculate a server-authoritative non-mutating commerce quote
+      description: Reads product prices, installation charges, coupon eligibility, shipping rates and tax slabs from PostgreSQL. Does not reserve inventory, consume coupons, create orders or process payments.
+      responses:
+        '200': { description: Pricing quote }
+        '400': { description: Invalid product/coupon/quote input }
+        '409': { description: Insufficient stock }
+
+  /admin/fulfillment/operations:
+    get:
+      summary: List native order and replacement fulfillment jobs
+      responses: { '200': { description: Fulfillment operations worklist } }
+  /admin/fulfillment/process:
+    post:
+      summary: Run one bounded fulfillment automation batch
+      responses: { '200': { description: Worker batch result } }
+  /admin/orders/{id}/shipment/documents:
+    post:
+      summary: Generate Shiprocket label and manifest for an order shipment
+      responses: { '200': { description: Document URLs persisted } }
+  /admin/orders/{id}/shipment/retry:
+    post:
+      summary: Requeue a failed native order fulfillment job
+      responses: { '200': { description: Job requeued } }
+  /admin/returns/{id}/replacement-shipment:
+    post:
+      summary: Create outbound shipment for an authorized replacement return
+      responses: { '200': { description: Replacement shipment } }
+  /admin/returns/{id}/replacement-shipment/retry:
+    post:
+      summary: Requeue a failed replacement shipment
+      responses: { '200': { description: Replacement job requeued } }
+  /admin/returns/{id}/replacement-shipment/documents:
+    post:
+      summary: Generate label and manifest for a replacement shipment
+      responses: { '200': { description: Replacement document URLs persisted } }

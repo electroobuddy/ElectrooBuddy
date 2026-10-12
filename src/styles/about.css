@@ -1,0 +1,385 @@
+400;500;600;700&display=swap');
+
+.about-page {
+  font-family: 'Poppins', sans-serif;
+}
+
+.about-page h1,
+.about-page h2,
+.about-page h3,
+.about-page h4,
+.about-page h5,
+.about-page h6 {
+  font-weight: 700;
+}
+
+/* Hero Section */
+.about-hero {
+  position: relative;
+  padding: 112px 0 96px;
+  overflow: hidden;
+  text-align: center;
+}
+
+/* Who We Are Section */
+.who-section {
+  padding: 80px 0;
+  background: #ffffff;
+}
+
+.dark .who-section {
+  background: #1f2937;
+}
+
+.who-inner {
+  max-width: 780px;
+  margin: 0 auto;
+  text-align: center;
+}
+
+.section-label {
+  display: inline-block;
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: #3b82f6;
+  margin-bottom: 16px;
+  font-family: 'Poppins', sans-serif;
+}
+
+.section-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: clamp(30px, 4vw, 48px);
+  font-weight: 800;
+  color: #1e3a8a;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  margin-bottom: 20px;
+}
+
+.dark .section-title {
+  color: #60a5fa;
+}
+
+.section-title span {
+  color: #3b82f6;
+}
+
+.who-text {
+  font-family: 'Poppins', sans-serif;
+  font-size: 16px;
+  color: #4b5563;
+  line-height: 1.8;
+}
+
+.dark .who-text {
+  color: #d1d5db;
+}
+
+.who-divider {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #1e3a8a, #3b82f6, #1e3a8a);
+  margin: 28px auto;
+  border-radius: 2px;
+}
+
+/* Mission & Vision Cards */
+.mv-section {
+  padding: 80px 0;
+  background: #f3f4f6;
+}
+
+.dark .mv-section {
+  background: #111827;
+}
+
+.mv-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 40px 36px;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.dark .mv-card {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.mv-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.mv-card:hover {
+  transform: translateY(-8px);
+  border-color: #3b82f6;
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15), 0 0 30px rgba(59, 130, 246, 0.1);
+}
+
+.mv-card:hover::before { opacity: 1; }
+
+.mv-icon-hex {
+  position: relative;
+  width: 60px;
+  height: 60px;
+  margin-bottom: 24px;
+}
+
+.hex-bg {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.15), rgba(30, 58, 138, 0.05));
+  clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+  transition: all 0.4s ease;
+  border-radius: 8px;
+}
+
+.mv-card:hover .hex-bg {
+  background: linear-gradient(135deg, #3b82f6, #1e3a8a);
+}
+
+.hex-icon {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #3b82f6;
+  transition: color 0.4s;
+}
+
+.mv-card:hover .hex-icon { color: #ffffff; }
+
+.mv-title {
+  font-family: 'Poppins', sans-serif;
+  font-size: 24px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 12px;
+}
+
+.dark .mv-title {
+  color: #60a5fa;
+}
+
+.mv-text {
+  font-size: 15px;
+  color: #6b7280;
+  line-height: 1.75;
+}
+
+.dark .mv-text {
+  color: #9ca3af;
+}
+
+/* Perks Section */
+.perks-section {
+  padding: 80px 0;
+  background: #ffffff;
+}
+
+.dark .perks-section {
+  background: #1f2937;
+}
+
+.perk-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 20px;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.3s ease;
+}
+
+.dark .perk-item {
+  background: #374151;
+  border-color: #4b5563;
+}
+
+.perk-item:hover {
+  border-color: #3b82f6;
+  background: rgba(59, 130, 246, 0.05);
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.1);
+}
+
+.perk-check {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: rgba(59, 130, 246, 0.1);
+  border: 1px solid rgba(59, 130, 246, 0.3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  color: #3b82f6;
+  transition: all 0.3s;
+}
+
+.perk-item:hover .perk-check {
+  background: #3b82f6;
+  color: #ffffff;
+  box-shadow: 0 0 8px rgba(59, 130, 246, 0.4);
+}
+
+.perk-text {
+  font-size: 15px;
+  font-weight: 500;
+  color: #374151;
+}
+
+.dark .perk-text {
+  color: #e5e7eb;
+}
+
+/* Team Section */
+.team-section {
+  padding: 80px 0;
+  background: #f9fafb;
+}
+
+.dark .team-section {
+  background: #111827;
+}
+
+.team-card {
+  position: relative;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 16px;
+  padding: 36px 24px 32px;
+  text-align: center;
+  overflow: hidden;
+  font-family: 'Poppins', sans-serif;
+  transition: all 0.4s cubic-bezier(0.23, 1, 0.32, 1);
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+}
+
+.dark .team-card {
+  background: #1f2937;
+  border-color: #374151;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+}
+
+.team-card::after {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #1e3a8a, #3b82f6);
+  opacity: 0;
+  transition: opacity 0.4s;
+}
+
+.team-card:hover {
+  transform: translateY(-8px);
+  border-color: #3b82f6;
+  box-shadow: 0 20px 40px rgba(59, 130, 246, 0.15), 0 0 30px rgba(59, 130, 246, 0.1);
+}
+
+.team-card:hover::after { opacity: 1; }
+
+.team-avatar {
+  position: relative;
+  width: 96px;
+  height: 96px;
+  margin: 0 auto 20px;
+}
+
+.avatar-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid rgba(59, 130, 246, 0.3);
+  animation: avatarSpin 8s linear infinite;
+}
+
+@keyframes avatarSpin {
+  to { transform: rotate(360deg); }
+}
+
+.avatar-inner {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.12), rgba(30, 58, 138, 0.06));
+  border: 2px solid #e5e7eb;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.4s;
+  overflow: hidden;
+}
+
+.team-card:hover .avatar-inner {
+  background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(30, 58, 138, 0.1));
+  border-color: #3b82f6;
+  box-shadow: 0 0 24px rgba(59, 130, 246, 0.2);
+}
+
+.team-users-icon {
+  color: #9ca3af;
+  transition: color 0.4s, transform 0.4s;
+}
+
+.team-card:hover .team-users-icon {
+  color: #3b82f6;
+  transform: scale(1.15);
+}
+
+.team-name {
+  font-family: 'Poppins', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  color: #1e3a8a;
+  margin-bottom: 6px;
+}
+
+.dark .team-name {
+  color: #60a5fa;
+}
+
+.team-role {
+  font-size: 13px;
+  font-weight: 600;
+  color: #3b82f6;
+  margin-bottom: 14px;
+}
+
+.team-bio {
+  font-size: 14px;
+  color: #6b7280;
+  line-height: 1.65;
+}
+
+.dark .team-bio {
+  color: #9ca3af;
+}
+
+/* Accessibility Focus Styles */
+button:focus-visible {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}
+
+.team-card:focus-within {
+  outline: 2px solid #3b82f6;
+  outline-offset: 2px;
+}

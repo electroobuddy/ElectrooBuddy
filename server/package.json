@@ -1,0 +1,61 @@
+{
+  "name": "electroobuddy-api",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": {
+    "node": ">=20.0.0"
+  },
+  "scripts": {
+    "dev": "tsx watch src/server.ts",
+    "build": "tsc -p tsconfig.json",
+    "start": "node dist/server.js",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "verify": "npm run typecheck && npm run test && npm run build",
+    "db:migrate": "tsx scripts/db-migrate.ts",
+    "db:status": "tsx scripts/db-status.ts",
+    "db:verify": "tsx scripts/db-verify.ts",
+    "checkout:expire": "tsx scripts/expire-checkouts.ts",
+    "payment:reconcile": "tsx scripts/reconcile-payments.ts",
+    "refund:reconcile": "tsx scripts/reconcile-refunds.ts",
+    "shipping:sync": "tsx scripts/sync-shipments.ts",
+    "fulfillment:process": "tsx scripts/process-fulfillment.ts",
+    "notification:process": "tsx scripts/process-notifications.ts",
+    "subscription:reconcile": "tsx scripts/reconcile-subscriptions.ts",
+    "phase26:live": "tsx scripts/phase26-live-certify.ts",
+    "ops:status": "tsx scripts/ops-status.ts",
+    "phase29:live": "tsx scripts/phase29-launch-certify.ts"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "dotenv": "^16.6.1",
+    "express": "^5.1.0",
+    "express-rate-limit": "^8.1.0",
+    "helmet": "^8.1.0",
+    "pg": "^8.16.3",
+    "pino": "^9.9.5",
+    "pino-http": "^10.5.0",
+    "zod": "^4.1.11",
+    "argon2": "^0.44.0",
+    "jose": "^6.1.0",
+    "nodemailer": "^7.0.6",
+    "@aws-sdk/client-s3": "^3.888.0",
+    "file-type": "^21.0.0",
+    "multer": "^2.0.2"
+  },
+  "devDependencies": {
+    "@types/cors": "^2.8.19",
+    "@types/express": "^5.0.3",
+    "@types/node": "^22.18.8",
+    "@types/pg": "^8.15.5",
+    "@types/supertest": "^6.0.3",
+    "supertest": "^7.1.4",
+    "tsx": "^4.20.6",
+    "typescript": "^5.9.3",
+    "vitest": "^3.2.4",
+    "@types/nodemailer": "^7.0.1",
+    "@types/multer": "^2.0.0"
+  }
+}

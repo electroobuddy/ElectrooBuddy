@@ -1,0 +1,94 @@
+{
+  "algorithm": "sha256",
+  "count": 22,
+  "migrations": [
+    {
+      "version": "001_baseline.sql",
+      "sha256": "36e4f3983b79f9c5001849a899d59f48f5497a4458cf3dea38457cb14abbf989"
+    },
+    {
+      "version": "002_auth_sessions_rbac.sql",
+      "sha256": "056e18a78171904171116690ee196728e5d6f2fc4bf669d0168be4d7186069da"
+    },
+    {
+      "version": "003_public_catalog_read_indexes.sql",
+      "sha256": "62160a8adbbab00c108ec200bfb88820c179420d30643467bd24a6a3533b97fa"
+    },
+    {
+      "version": "004_object_storage_media.sql",
+      "sha256": "0d021ee25ef5fd79c9d551c2a4eaa21fd17f52dcf8d9adbe7063a0af931f920a"
+    },
+    {
+      "version": "005_user_profile_address_api.sql",
+      "sha256": "d028e5cd2c89112ab1aa4e48ff8e42150b27c98255845b33d011e8297e1a8661"
+    },
+    {
+      "version": "006_cart_wishlist_api.sql",
+      "sha256": "6262c08d18030cdd6e1c9762d31bebdd950590235d45c6e1374b0bdc09df3174"
+    },
+    {
+      "version": "007_service_booking_api.sql",
+      "sha256": "be5d2217ad787311397664d9d0599a6cba3bdffcba308fab83dfd492148ecf11"
+    },
+    {
+      "version": "008_technician_admin_booking_ops.sql",
+      "sha256": "183728c69d30c13a8f60c87c3f3bfd8cb94c849c051990801f36523d0b4c53c0"
+    },
+    {
+      "version": "009_pricing_quote_authority.sql",
+      "sha256": "42e95ad7b076dcc55117b6d1b41a948e16653d0c67a1b32c7ca8e70e001973ea"
+    },
+    {
+      "version": "010_native_commerce_checkout.sql",
+      "sha256": "22d9b924fe81f86d4c3c2ef221bc6215376c937a49aae846bd1c3f38adf6d190"
+    },
+    {
+      "version": "011_razorpay_payment_authority.sql",
+      "sha256": "77b225faf0dde0f966d533c3a60c52205389c90217bb197ec61183b3255417a1"
+    },
+    {
+      "version": "012_native_order_operations.sql",
+      "sha256": "a744340c07a638be9d3c56dac17474b08458e42afecdced9f5aa56166f399692"
+    },
+    {
+      "version": "013_native_refund_authority.sql",
+      "sha256": "8bc693ed65b848658cfa49ac0efdfb2a24f844f0c6b9ce47df0ae3dc73bd1be1"
+    },
+    {
+      "version": "014_native_returns_rto_authority.sql",
+      "sha256": "aa2aca9763e70521189cbe72250732c30f83b25c1be20171c7cc2c3c0f26f846"
+    },
+    {
+      "version": "015_native_shipping_fulfillment_authority.sql",
+      "sha256": "b188de611e4bab3dd90298788e099ea037ed6a16fb4d2a856d36bee597aa9da1"
+    },
+    {
+      "version": "016_fulfillment_automation_replacement_shipments.sql",
+      "sha256": "0de3c4858ad907243dd290260631ac50690daff17c4d05ab564f37edc13ee0a8"
+    },
+    {
+      "version": "017_native_notifications_communication.sql",
+      "sha256": "3cec6dcef83f814b54116fb3b8edf69e0e1f91ac3c26b0c6e023ace5820e00c4"
+    },
+    {
+      "version": "018_admin_system_operations_retirement.sql",
+      "sha256": "78befa867f092fe832663409832303fa1b5718f3ef655597e4f1600a7d3385ed"
+    },
+    {
+      "version": "019_catalog_subscription_retirement.sql",
+      "sha256": "91b32d5bc770d5c49ec13289331d4d5a134b6abef6188997e6180c10fb134b08"
+    },
+    {
+      "version": "020_booking_financial_authority.sql",
+      "sha256": "59e6ba25a51c691783d46a5c6c9005b1ff6c3aece97dba5b6b80b135695bea55"
+    },
+    {
+      "version": "021_final_provider_runtime_shutdown.sql",
+      "sha256": "92fd7e4fb2d40b375066fe2ab562c2a187fc09afb1ecb89e798092025dc47584"
+    },
+    {
+      "version": "022_operational_readiness.sql",
+      "sha256": "f3e38ba1256de6285f4bb3ac70465cc251f8dccf4b15df55b3d270631c8a9531"
+    }
+  ]
+}

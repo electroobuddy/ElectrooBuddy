@@ -1,0 +1,28 @@
+from pathlib import Path
+root=Path(__file__).resolve().parents[1]
+checks=[]
+def text(path): return (root/path).read_text(errors='ignore')
+def has(path, needle): return needle in text(path)
+def add(name, ok): checks.append((name, bool(ok)))
+add('ops route exists', has(Path('server/src/routes/ops.routes.ts'),"'/admin/ops/status'"))
+add('ops route requires security permission', has(Path('server/src/routes/ops.routes.ts'),"requirePermission('admin:security')"))
+add('typed ops snapshot', has(Path('src/lib/apiContracts.ts'),'interface OpsStatusSnapshot'))
+add('typed worker runs', has(Path('src/lib/apiContracts.ts'),'interface OpsWorkerRun'))
+add('typed worker leases', has(Path('src/lib/apiContracts.ts'),'interface OpsWorkerLease'))
+add('frontend ops client', has(Path('src/lib/nativeAdminOperations.ts'),"getNativeOpsStatus"))
+add('operations page exists', (root/'src/pages/admin/AdminOperations.tsx').is_file())
+add('operations route registered', has(Path('src/App.tsx'),'/admin/operations'))
+add('operations nav registered', has(Path('src/pages/admin/AdminLayout.tsx'),'Operations') and has(Path('src/pages/admin/AdminLayout.tsx'),'admin:security'))
+add('all seven scheduled workers visible', all(has(Path('src/pages/admin/AdminOperations.tsx'),w) for w in ['checkout-expiry','payment-reconciliation','refund-reconciliation','shipment-sync','fulfillment-queue','notification-delivery','subscription-reconciliation']))
+add('worker failures visible', has(Path('src/pages/admin/AdminOperations.tsx'),'failures24h'))
+add('stale workers visible', has(Path('src/pages/admin/AdminOperations.tsx'),'staleWorkers'))
+add('leases visible', has(Path('src/pages/admin/AdminOperations.tsx'),'activeLeases'))
+add('auto refresh configured', has(Path('src/pages/admin/AdminOperations.tsx'),'30_000'))
+add('ops permission fail state', has(Path('src/pages/admin/AdminOperations.tsx'),'admin:security'))
+add('manual notification processing uses server action', has(Path('src/pages/admin/AdminOperations.tsx'),'nativeNotifications.process(25)'))
+add('manual fulfillment processing uses server action', has(Path('src/pages/admin/AdminOperations.tsx'),'processFulfillmentNow'))
+add('manual actions require admin write', has(Path('src/pages/admin/AdminOperations.tsx'),"permissions.includes('admin:write')"))
+failed=[name for name,ok in checks if not ok]
+for name,ok in checks: print(('PASS' if ok else 'FAIL'),name)
+print(f'FAPI-12: {len(checks)-len(failed)}/{len(checks)} PASS')
+raise SystemExit(1 if failed else 0)

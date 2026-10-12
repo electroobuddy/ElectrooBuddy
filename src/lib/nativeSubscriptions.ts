@@ -1,0 +1,10 @@
+import { nativeApiFetch } from '@/lib/apiClient';
+import type { NativeSubscription, NativeSubscriptionBenefit, NativeSubscriptionPlan, SubscriptionCheckoutResult, SubscriptionVerifyInput, SubscriptionVerifyResult } from './apiContracts';
+export const listNativePlans=()=>nativeApiFetch<NativeSubscriptionPlan[]>('/subscription-plans',{},false);
+export const listMySubscriptions=()=>nativeApiFetch<NativeSubscription[]>('/subscriptions');
+export const listMySubscriptionBenefits=(id:string)=>nativeApiFetch<NativeSubscriptionBenefit[]>(`/subscriptions/${id}/benefits`);
+export const createNativeSubscriptionOrder=(planId:string,requestId:string)=>nativeApiFetch<SubscriptionCheckoutResult>('/subscriptions/checkout',{method:'POST',body:JSON.stringify({plan_id:planId,request_id:requestId})});
+export const verifyNativeSubscriptionPayment=(body:SubscriptionVerifyInput)=>nativeApiFetch<SubscriptionVerifyResult>('/subscriptions/razorpay/verify',{method:'POST',body:JSON.stringify(body)});
+export const listNativeAdminSubscriptions=()=>nativeApiFetch<NativeSubscription[]>('/admin/subscriptions');
+export const listNativeAdminSubscriptionBenefits=(id:string)=>nativeApiFetch<NativeSubscriptionBenefit[]>(`/admin/subscriptions/${id}/benefits`);
+export const updateNativeAdminSubscription=(id:string,body:{status?:string;extendDays?:number})=>nativeApiFetch<NativeSubscription>(`/admin/subscriptions/${id}`,{method:'PATCH',body:JSON.stringify(body)});

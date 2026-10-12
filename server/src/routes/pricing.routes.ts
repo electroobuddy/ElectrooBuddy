@@ -1,0 +1,2 @@
+import { Router } from 'express'; import type { AppEnv } from '../config/env.js'; import type { AuthRepository } from '../repositories/auth.repository.js'; import type { PricingController } from '../controllers/pricing.controller.js'; import { authenticate,requirePermission } from '../middleware/auth.js';
+export function createPricingRouter(env:AppEnv,c:PricingController,a:AuthRepository){const r=Router();r.post('/pricing/quote',authenticate(env,a),requirePermission('cart:read'),c.quote);return r;}

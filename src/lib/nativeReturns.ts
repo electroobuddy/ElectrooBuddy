@@ -1,0 +1,10 @@
+import {nativeApiFetch} from './apiClient';
+import type { NativeReturn } from './apiContracts';
+export const listNativeReturns=()=>nativeApiFetch<NativeReturn[]>('/returns');
+export const requestNativeReturn=(input:{orderId:string;requestKey:string;items:Array<{orderItemId:string;quantity:number}>;reason:string;resolution:'refund'|'replacement'})=>nativeApiFetch<NativeReturn>(`/orders/${input.orderId}/returns`,{method:'POST',body:JSON.stringify({requestKey:input.requestKey,items:input.items,reason:input.reason,resolution:input.resolution})});
+export const listNativeAdminReturns=()=>nativeApiFetch<NativeReturn[]>('/admin/returns');
+export const approveNativeReturn=(id:string)=>nativeApiFetch<NativeReturn>(`/admin/returns/${id}/approve`,{method:'POST'});
+export const setNativeReturnStatus=(id:string,status:string)=>nativeApiFetch<NativeReturn>(`/admin/returns/${id}/status`,{method:'POST',body:JSON.stringify({status})});
+export const inspectNativeReturn=(id:string,accept:Array<{returnItemId:string;acceptedQuantity:number}>,notes='Admin physical inspection')=>nativeApiFetch<NativeReturn>(`/admin/returns/${id}/inspect`,{method:'POST',body:JSON.stringify({accept,notes})});
+export const resolveNativeReturn=(id:string)=>nativeApiFetch<NativeReturn>(`/admin/returns/${id}/resolve`,{method:'POST'});
+export const createNativeRto=(input:{orderId:string;requestKey:string;reason?:string})=>nativeApiFetch<NativeReturn>('/admin/returns/rto',{method:'POST',body:JSON.stringify(input)});

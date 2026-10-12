@@ -1,0 +1,11 @@
+import { nativeApiFetch } from '@/lib/apiClient';
+import type { ApiRecord } from './apiContracts';
+export type CatalogKind='products'|'categories'|'services'|'projects'|'team'|'testimonials'|'plans'|'coupons';
+export const listAdminCatalog=<T extends ApiRecord=ApiRecord>(kind:CatalogKind,signal?:AbortSignal)=>nativeApiFetch<T[]>(`/admin/catalog/${kind}`,{signal});
+export const createAdminCatalog=<T extends ApiRecord=ApiRecord>(kind:CatalogKind,body:ApiRecord)=>nativeApiFetch<T>(`/admin/catalog/${kind}`,{method:'POST',body:JSON.stringify(body)});
+export const updateAdminCatalog=<T extends ApiRecord=ApiRecord>(kind:CatalogKind,id:string,body:ApiRecord)=>nativeApiFetch<T>(`/admin/catalog/${kind}/${id}`,{method:'PATCH',body:JSON.stringify(body)});
+export const deleteAdminCatalog=(kind:CatalogKind,id:string)=>nativeApiFetch<{deleted:boolean}>(`/admin/catalog/${kind}/${id}`,{method:'DELETE'});
+export const listAdminOffers=<T extends ApiRecord=ApiRecord>()=>nativeApiFetch<T[]>('/admin/catalog/offers');
+export const createAdminOffer=<T extends ApiRecord=ApiRecord>(body:ApiRecord)=>nativeApiFetch<T>('/admin/catalog/offers',{method:'POST',body:JSON.stringify(body)});
+export const updateAdminOffer=<T extends ApiRecord=ApiRecord>(id:string,body:ApiRecord)=>nativeApiFetch<T>(`/admin/catalog/offers/${id}`,{method:'PATCH',body:JSON.stringify(body)});
+export const deleteAdminOffer=(id:string)=>nativeApiFetch<{deleted:boolean}>(`/admin/catalog/offers/${id}`,{method:'DELETE'});

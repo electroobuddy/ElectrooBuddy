@@ -1,3 +1,4 @@
+import { omitUndefined } from '../utils/omit-undefined.js';
 import type { Request, Response, NextFunction } from 'express';
 import { z } from 'zod';
 import type { CatalogService } from '../services/catalog.service.js';
@@ -22,7 +23,7 @@ export class CatalogController {
   listProducts = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const q = productListSchema.parse(req.query);
-      const result = await this.service.listProducts(q);
+      const result = await this.service.listProducts(omitUndefined(q));
       res.json({ success: true, data: result.items, meta: { page: q.page, limit: q.limit, total: result.total, pages: Math.ceil(result.total / q.limit) } });
     } catch (error) { next(error); }
   };

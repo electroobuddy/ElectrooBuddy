@@ -1,3 +1,4 @@
+import { omitUndefined } from '../utils/omit-undefined.js';
 import type { RequestHandler } from 'express';
 import { z } from 'zod';
 import type { AccountService } from '../services/account.service.js';
@@ -16,7 +17,7 @@ const idSchema = z.string().uuid();
 export class AccountController {
   constructor(private readonly service: AccountService) {}
   getProfile: RequestHandler = async (req,res,next) => { try { res.json({success:true,data:await this.service.getProfile(req.auth!.userId)}); } catch(e){next(e);} };
-  updateProfile: RequestHandler = async (req,res,next) => { try { res.json({success:true,data:await this.service.updateProfile(req.auth!.userId,profileSchema.parse(req.body))}); } catch(e){next(e);} };
+  updateProfile: RequestHandler = async (req,res,next) => { try { res.json({success:true,data:await this.service.updateProfile(req.auth!.userId,omitUndefined(profileSchema.parse(req.body)))}); } catch(e){next(e);} };
   listAddresses: RequestHandler = async (req,res,next) => { try { res.json({success:true,data:await this.service.listAddresses(req.auth!.userId)}); } catch(e){next(e);} };
   createAddress: RequestHandler = async (req,res,next) => { try { res.status(201).json({success:true,data:await this.service.createAddress(req.auth!.userId,addressSchema.parse(req.body))}); } catch(e){next(e);} };
   updateAddress: RequestHandler = async (req,res,next) => { try { res.json({success:true,data:await this.service.updateAddress(req.auth!.userId,idSchema.parse(req.params.id),addressPatchSchema.parse(req.body))}); } catch(e){next(e);} };

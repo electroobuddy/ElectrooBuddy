@@ -1,7 +1,7 @@
 import { AppError } from '../errors/app-error.js';
 import type { PricingRepository, CouponRow, PricingProduct } from '../repositories/pricing.repository.js';
 export interface QuoteItem { productId:string; quantity:number; installationService:boolean }
-export interface QuoteInput { items:QuoteItem[]; state:string; couponCode?:string|null }
+export interface QuoteInput { items:QuoteItem[]; state:string; couponCode?:string|null|undefined }
 const money=(n:number)=>Math.round((n+Number.EPSILON)*100)/100;
 export class PricingService {
  constructor(private readonly r:PricingRepository){}

@@ -15,6 +15,14 @@ import { useAdminProducts, useAdminCacheInvalidation } from "@/hooks/useOptimize
 
 type Product = any;
 
+const formatProductPrice = (value: unknown): string => {
+  if (value === null || value === undefined || value === "") return "—";
+  const amount = typeof value === "number" ? value : typeof value === "string" ? Number(value) : NaN;
+  return Number.isFinite(amount) && amount >= 0 ? amount.toFixed(2) : "—";
+};
+
+
+
 // ─── Minimal reusable primitives ─────────────────────────────────────────────
 
 const Badge = ({ color, icon, label }: { color: string; icon: string; label: string }) => (
@@ -770,9 +778,9 @@ const AdminProducts = () => {
                 <h3 className="font-semibold text-zinc-900 dark:text-white text-sm leading-snug line-clamp-2">{product.name}</h3>
                 <div className="flex items-center justify-between mt-3">
                   <div>
-                    <p className="text-base font-bold text-blue-600">₹{product.price.toFixed(2)}</p>
+                    <p className="text-base font-bold text-blue-600">₹{formatProductPrice(product.price)}</p>
                     {product.compare_at_price && (
-                      <p className="text-xs text-zinc-400 line-through">₹{product.compare_at_price.toFixed(2)}</p>
+                      <p className="text-xs text-zinc-400 line-through">₹{formatProductPrice(product.compare_at_price)}</p>
                     )}
                   </div>
                   <div className="text-right">
@@ -830,9 +838,9 @@ const AdminProducts = () => {
                       </span>
                     </td>
                     <td className="px-4 py-4">
-                      <p className="text-sm font-bold text-zinc-900 dark:text-white">₹{product.price.toFixed(2)}</p>
+                      <p className="text-sm font-bold text-zinc-900 dark:text-white">₹{formatProductPrice(product.price)}</p>
                       {product.compare_at_price && (
-                        <p className="text-xs text-zinc-400 line-through decoration-red-400">₹{product.compare_at_price.toFixed(2)}</p>
+                        <p className="text-xs text-zinc-400 line-through decoration-red-400">₹{formatProductPrice(product.compare_at_price)}</p>
                       )}
                     </td>
                     <td className="px-4 py-4">

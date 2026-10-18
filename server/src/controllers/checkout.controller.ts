@@ -1,3 +1,4 @@
+import { omitUndefined } from '../utils/omit-undefined.js';
 import type { Request,Response,NextFunction } from 'express';
 import { z } from 'zod';
 import type { CheckoutService } from '../services/checkout.service.js';
@@ -12,7 +13,7 @@ export class CheckoutController{
   const requestId=header??input.requestId;
   if(!requestId||!uuid.safeParse(requestId).success) throw new AppError(400,'IDEMPOTENCY_KEY_REQUIRED','A UUID Idempotency-Key header is required');
   if(input.requestId&&input.requestId!==requestId) throw new AppError(400,'IDEMPOTENCY_KEY_MISMATCH','Idempotency key does not match request body');
-  const data=await this.service.create(req.auth!.userId,{...input,requestId});
+  const data=await this.service.create(req.auth!.userId,{...omitUndefined(input), address: omitUndefined(input.address), requestId});
   res.status(data.idempotent?200:201).json({success:true,data});
  }catch(e){next(e)}}
 }

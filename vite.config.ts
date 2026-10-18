@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
       hmr: { overlay: false },
     },
     plugins: [react(), mode === "development" && componentTagger()].filter(Boolean),
-    resolve: { alias: { "@": path.resolve(__dirname, "./src") } },
+    resolve: { alias: { "@": path.resolve(__dirname, "./src") }, dedupe: ["react", "react-dom"] },
     build: {
       minify: "esbuild",
       target: "esnext",

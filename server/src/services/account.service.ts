@@ -8,7 +8,7 @@ export class AccountService {
     if (!profile) throw new AppError(404, 'PROFILE_NOT_FOUND', 'Profile not found');
     return profile;
   }
-  updateProfile(userId: string, input: { fullName?: string | null; phone?: string | null; address?: string | null }) { return this.repo.upsertProfile(userId, input); }
+  updateProfile(userId: string, input: { fullName?: string | null | undefined; phone?: string | null | undefined; address?: string | null | undefined }) { return this.repo.upsertProfile(userId, input); }
   listAddresses(userId: string) { return this.repo.listAddresses(userId); }
   createAddress(userId: string, input: unknown) { return this.repo.createAddress(userId, input); }
   async updateAddress(userId: string, id: string, input: unknown) {

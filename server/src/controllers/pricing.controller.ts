@@ -1,3 +1,4 @@
+import { omitUndefined } from '../utils/omit-undefined.js';
 import type { RequestHandler } from 'express'; import { z } from 'zod'; import type { PricingService } from '../services/pricing.service.js';
 const item=z.object({productId:z.string().uuid(),quantity:z.number().int().min(1).max(99),installationService:z.boolean().default(false)}).strict(); const quote=z.object({items:z.array(item).min(1).max(100),state:z.string().trim().min(2).max(100),couponCode:z.string().trim().max(64).nullable().optional()}).strict();
-export class PricingController { constructor(private readonly s:PricingService){} quote:RequestHandler=async(req,res,next)=>{try{res.json({success:true,data:await this.s.quote(req.auth!.userId,quote.parse(req.body))});}catch(e){next(e)}}; }
+export class PricingController { constructor(private readonly s:PricingService){} quote:RequestHandler=async(req,res,next)=>{try{res.json({success:true,data:await this.s.quote(req.auth!.userId,omitUndefined(quote.parse(req.body)))});}catch(e){next(e)}}; }

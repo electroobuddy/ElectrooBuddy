@@ -3,11 +3,11 @@ import type { QueryableDatabase } from '../config/database.js';
 export interface ProductListQuery {
   page: number;
   limit: number;
-  category?: string;
-  brand?: string;
-  search?: string;
+  category?: string | undefined;
+  brand?: string | undefined;
+  search?: string | undefined;
   sort?: 'featured' | 'newest' | 'price-asc' | 'price-desc' | 'name';
-  featured?: boolean;
+  featured?: boolean | undefined;
 }
 
 export interface CatalogRepository {

@@ -49,7 +49,7 @@ export class AccountRepository {
     return mapProfile(row);
   }
 
-  async upsertProfile(userId: string, input: { fullName?: string | null; phone?: string | null; address?: string | null }, tx: QueryableDatabase = this.db) {
+  async upsertProfile(userId: string, input: { fullName?: string | null | undefined; phone?: string | null | undefined; address?: string | null | undefined }, tx: QueryableDatabase = this.db) {
     const result = await tx.query(
       `INSERT INTO profiles (user_id,email,full_name,phone,address)
        SELECT u.id,u.email,$2,$3,$4 FROM users u WHERE u.id=$1

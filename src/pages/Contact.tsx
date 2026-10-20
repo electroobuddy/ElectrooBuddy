@@ -115,7 +115,6 @@ const Contact = () => {
         }}
       />
       <style>{`
-        400;500;600;700&display=swap');
 
         .contact-page {
           font-family: 'Poppins', sans-serif;

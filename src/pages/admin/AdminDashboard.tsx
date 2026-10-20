@@ -204,7 +204,7 @@ const AdminDashboard = () => {
   const storageTextColor = (p: number) =>
     p < 50 ? "text-emerald-600" : p < 75 ? "text-yellow-600" : p < 90 ? "text-orange-500" : "text-red-500";
 
-  if (loading || !tableCounts) return (
+  if (loading) return (
     <div className="flex items-center justify-center py-32">
       <div className="flex flex-col items-center gap-4">
         <div className="w-12 h-12 rounded-2xl bg-blue-600 flex items-center justify-center">

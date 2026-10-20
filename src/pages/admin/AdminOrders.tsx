@@ -484,10 +484,10 @@ const AdminOrders = () => {
                               </p>
                             )}
                             <div className="flex items-center gap-4 text-xs text-zinc-600 dark:text-zinc-400">
-                              <span>Qty: <strong>{parseInt(item.quantity) || 1}</strong></span>
-                              <span>Price: ₹{(parseFloat(item.unit_price) || 0).toFixed(2)}</span>
+                              <span>Qty: <strong>{Number(item.quantity) || 1}</strong></span>
+                              <span>Price: ₹{(Number(item.unit_price) || 0).toFixed(2)}</span>
                               <span className="font-bold text-zinc-900 dark:text-white">
-                                Total: ₹{((parseFloat(item.unit_price) || 0) * (parseInt(item.quantity) || 1)).toFixed(2)}
+                                Total: ₹{((Number(item.unit_price) || 0) * (Number(item.quantity) || 1)).toFixed(2)}
                               </span>
                             </div>
                             {item.installation_service && (
@@ -570,7 +570,7 @@ const AdminOrders = () => {
                                   <p className="text-xs text-emerald-700 dark:text-emerald-400">SKU: {item.product_sku}</p>
                                 )}
                                 <p className="text-xs text-emerald-600 dark:text-emerald-500">
-                                  Qty: <strong>{parseInt(item.quantity) || 1}</strong> × ₹{(parseFloat(item.unit_price) || 0).toFixed(2)}
+                                  Qty: <strong>{Number(item.quantity) || 1}</strong> × ₹{(Number(item.unit_price) || 0).toFixed(2)}
                                 </p>
                               </div>
                               {item.installation_service && (

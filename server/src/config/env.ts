@@ -81,6 +81,10 @@ const envSchema = z.object({
   OPS_ALERT_WEBHOOK_URL: z.string().url().or(z.literal('')).default(''),
   OPS_ALERT_TIMEOUT_MS: z.coerce.number().int().min(500).max(30000).default(5000),
   OPS_STALE_WORKER_MINUTES: z.coerce.number().int().min(5).max(1440).default(30),
+  GUEST_BOOKING_RATE_LIMIT_WINDOW_MS: z.coerce.number().int().min(60000).default(900000),
+  GUEST_BOOKING_RATE_LIMIT_MAX: z.coerce.number().int().min(1).max(50).default(5),
+  TURNSTILE_SECRET_KEY: z.string().default(''),
+  TURNSTILE_REQUIRED: booleanFromString.default(false),
 });
 
 export type AppEnv = z.infer<typeof envSchema> & { corsOrigins: string[]; publicSiteSettingKeys: string[] };
@@ -139,6 +143,10 @@ export function loadEnv(source: NodeJS.ProcessEnv = process.env): AppEnv {
   }
   if (result.data.NODE_ENV === 'production' && result.data.SHIPROCKET_EMAIL && !result.data.SHIPROCKET_WEBHOOK_TOKEN) {
     throw new Error('Invalid server environment: SHIPROCKET_WEBHOOK_TOKEN is required when Shiprocket is enabled in production');
+  }
+
+  if (result.data.TURNSTILE_REQUIRED && !result.data.TURNSTILE_SECRET_KEY) {
+    throw new Error('Invalid server environment: TURNSTILE_SECRET_KEY is required when TURNSTILE_REQUIRED=true');
   }
 
   if (corsOrigins.length === 0 || corsOrigins.includes('*')) {

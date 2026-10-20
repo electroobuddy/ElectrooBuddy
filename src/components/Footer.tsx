@@ -209,7 +209,6 @@ const Footer = () => {
   return (
     <>
       <style>{`
-        400;500;600;700&family=Inter:wght@400;500;600&display=swap');
 
         .footer-root {
           position: relative;

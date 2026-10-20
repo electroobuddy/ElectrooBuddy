@@ -1,7 +1,7 @@
 import type { DatabaseClient, QueryableDatabase } from '../config/database.js';
 
 export interface CreateBookingRow {
-  userId:string; requestId:string; serviceId:string|null; name:string; phone:string; email:string; address:string;
+  userId:string|null; requestId:string; serviceId:string|null; name:string; phone:string; email:string|null; address:string;
   exactLocation:string|null; serviceType:string; customServiceDemand:string|null; preferredDate:string; preferredTime:string;
   description:string|null; isSwitchWorking?:string|null; hasOldFan?:string|null; isElectricitySupplyOn?:string|null; originalAmount:number; finalAmount:number; trackingTokenHash:string;
 }
@@ -12,6 +12,15 @@ export class BookingRepository {
   constructor(private readonly db:DatabaseClient) {}
   async findIdempotent(userId:string, requestId:string, tx:QueryableDatabase=this.db){
     const r=await tx.query(`SELECT id,service_type,preferred_date,preferred_time,status,original_amount,discount_amount,subscription_discount,final_amount,created_at FROM bookings WHERE user_id=$1 AND booking_request_id=$2 AND deleted_at IS NULL`,[userId,requestId]); return r.rows[0]??null;
+  }
+  async findGuestIdempotent(phone:string, requestId:string, tx:QueryableDatabase=this.db){
+    const r=await tx.query(`SELECT id,service_type,preferred_date,preferred_time,status,original_amount,discount_amount,subscription_discount,final_amount,created_at FROM bookings WHERE user_id IS NULL AND phone=$1 AND booking_request_id=$2 AND deleted_at IS NULL`,[phone,requestId]); return r.rows[0]??null;
+  }
+  async findActiveGuestDuplicate(phone:string, serviceType:string, preferredDate:string, tx:QueryableDatabase=this.db){
+    const r=await tx.query(`SELECT id FROM bookings WHERE user_id IS NULL AND phone=$1 AND service_type=$2 AND preferred_date=$3::date AND status IN('pending','assigned','confirmed') AND deleted_at IS NULL LIMIT 1`,[phone,serviceType,preferredDate]); return r.rows[0]??null;
+  }
+  async countActiveGuestBookings(phone:string, tx:QueryableDatabase=this.db){
+    const r=await tx.query(`SELECT count(*)::int AS n FROM bookings WHERE user_id IS NULL AND phone=$1 AND status IN('pending','assigned','confirmed') AND deleted_at IS NULL`,[phone]); return Number(r.rows[0]?.n??0);
   }
   async getService(serviceId:string, tx:QueryableDatabase=this.db){
     const r=await tx.query(`SELECT id,title,service_charge,show_visit_charge,book_now_enabled FROM services WHERE id=$1`,[serviceId]); return r.rows[0]??null;
@@ -27,7 +36,7 @@ export class BookingRepository {
     const r=await tx.query(`INSERT INTO bookings(user_id,service_id,booking_request_id,name,phone,email,address,exact_location,service_type,custom_service_demand,preferred_date,preferred_time,description,is_switch_working,has_old_fan,is_electricity_supply_on,status,original_amount,final_amount,discount_amount,subscription_discount,offer_applied,tracking_token_hash,booking_coupon_id,coupon_code,coupon_consumed_at,user_subscription_id,subscription_benefit_used,financial_authority_version)
       VALUES($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,'pending',$17,$18,$19,$20,$21,$22,$23,$24,CASE WHEN $23::uuid IS NULL THEN NULL ELSE now() END,$25,$26,21)
       RETURNING id,user_id,service_id,service_type,preferred_date,preferred_time,status,original_amount,discount_amount,subscription_discount,subscription_benefit_used,coupon_code,final_amount,created_at`,
-      [row.userId,row.serviceId,row.requestId,row.name,row.phone,row.email,row.address,row.exactLocation,row.serviceType,row.customServiceDemand,row.preferredDate,row.preferredTime,row.description,row.isSwitchWorking??null,row.hasOldFan??null,row.isElectricitySupplyOn??null,row.originalAmount,row.finalAmount,row.couponDiscount,row.subscriptionDiscount,row.couponDiscount>0,row.trackingTokenHash,row.couponId,row.couponCode,row.userSubscriptionId,row.benefit]);
+      [row.userId,row.serviceId,row.requestId,row.name,row.phone,row.email??'',row.address,row.exactLocation,row.serviceType,row.customServiceDemand,row.preferredDate,row.preferredTime,row.description,row.isSwitchWorking??null,row.hasOldFan??null,row.isElectricitySupplyOn??null,row.originalAmount,row.finalAmount,row.couponDiscount,row.subscriptionDiscount,row.couponDiscount>0,row.trackingTokenHash,row.couponId,row.couponCode,row.userSubscriptionId,row.benefit]);
     return r.rows[0];
   }
   async listOwn(userId:string,status?:string){

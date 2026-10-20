@@ -69,22 +69,31 @@ const AdminTestimonials = () => {
   const handleSave = async () => {
     if (!form.name || !form.text) return toast.error("Name and testimonial text required");
     setSaving(true);
-    if (editing?.id) {
-      await updateAdminCatalog("testimonials", editing.id, form);
-      toast.success("Testimonial updated");
-    } else {
-      await createAdminCatalog("testimonials", form);
-      toast.success("Testimonial added");
+    try {
+      if (editing?.id) {
+        await updateAdminCatalog("testimonials", editing.id, form);
+        toast.success("Testimonial updated");
+      } else {
+        await createAdminCatalog("testimonials", form);
+        toast.success("Testimonial added");
+      }
+      setEditing(null); setForm(emptyTest); fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save testimonial");
+    } finally {
+      setSaving(false);
     }
-    setEditing(null); setForm(emptyTest); fetchData();
-    setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this testimonial?")) return;
-    await deleteAdminCatalog("testimonials", id);
-    toast.success("Deleted");
-    fetchData();
+    try {
+      await deleteAdminCatalog("testimonials", id);
+      toast.success("Deleted");
+      fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete testimonial");
+    }
   };
 
   if (loading) return (
@@ -275,7 +284,7 @@ const AdminTestimonials = () => {
               {/* Customer */}
               <div className="flex items-center gap-3 pt-4 border-t border-zinc-100 dark:border-zinc-800">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center flex-shrink-0">
-                  <span className="text-white font-bold text-sm">{t.name[0]?.toUpperCase()}</span>
+                  <span className="text-white font-bold text-sm">{t.name?.[0]?.toUpperCase() ?? "?"}</span>
                 </div>
                 <div>
                   <p className="text-sm font-bold text-zinc-900 dark:text-white">{t.name}</p>

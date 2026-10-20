@@ -127,7 +127,6 @@ export default function HeroSection({
           GLOBAL STYLES
       ──────────────────────────────────────────────────────────────────────── */}
       <style>{`
-        0,600;0,700;0,900;1,900&family=DM+Sans:wght@300;400;500;600&display=swap');
 
         .eb-hero {
           position: relative;

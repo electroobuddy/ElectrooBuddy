@@ -71,6 +71,10 @@ const AdminPlanManagement = () => {
   };
 
   const handleSavePlan = async (plan: Plan) => {
+    if (!plan.name || !(plan.price > 0)) {
+      toast.error("Name and a price greater than 0 are required");
+      return;
+    }
     setSaving(plan.id);
     try {
       await updateAdminCatalog("plans", plan.id, {
@@ -167,7 +171,7 @@ const AdminPlanManagement = () => {
   const addFeature = (target: "edit" | "new") => {
     if (!newFeature.trim()) return;
     if (target === "edit" && editingPlan) {
-      setEditingPlan({ ...editingPlan, features: [...editingPlan.features, newFeature.trim()] });
+      setEditingPlan({ ...editingPlan, features: [...(editingPlan.features ?? []), newFeature.trim()] });
     } else {
       setNewPlan({ ...newPlan, features: [...newPlan.features, newFeature.trim()] });
     }
@@ -176,7 +180,7 @@ const AdminPlanManagement = () => {
 
   const removeFeature = (index: number, target: "edit" | "new") => {
     if (target === "edit" && editingPlan) {
-      setEditingPlan({ ...editingPlan, features: editingPlan.features.filter((_, i) => i !== index) });
+      setEditingPlan({ ...editingPlan, features: (editingPlan.features ?? []).filter((_, i) => i !== index) });
     } else {
       setNewPlan({ ...newPlan, features: newPlan.features.filter((_, i) => i !== index) });
     }
@@ -408,7 +412,7 @@ const AdminPlanManagement = () => {
                 <div>
                   <p className="text-xs font-semibold text-zinc-500 uppercase tracking-wider mb-2">Features</p>
                   <div className="flex flex-wrap gap-1.5">
-                    {plan.features.map((f, i) => (
+                    {(plan.features ?? []).map((f, i) => (
                       <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs">
                         <CheckCircle size={10} className="text-green-500" /> {f}
                       </span>
@@ -509,7 +513,7 @@ const AdminPlanManagement = () => {
                         <button onClick={() => addFeature("edit")} className="px-3 py-2 rounded-xl bg-zinc-100 dark:bg-zinc-700 text-sm">Add</button>
                       </div>
                       <div className="flex flex-wrap gap-1.5">
-                        {editingPlan.features.map((f, i) => (
+                        {(editingPlan.features ?? []).map((f, i) => (
                           <span key={i} className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 text-xs">
                             {f}
                             <button onClick={() => removeFeature(i, "edit")} className="hover:text-red-500"><XCircle size={10} /></button>

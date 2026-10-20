@@ -63,23 +63,32 @@ const AdminTeam = () => {
   const handleSave = async () => {
     if (!form.name || !form.role) return toast.error("Name and role required");
     setSaving(true);
-    const payload = { ...form, photo_url: form.photo_url || null };
-    if (editing?.id) {
-      await updateAdminCatalog("team", editing.id, payload);
-      toast.success("Member updated");
-    } else {
-      await createAdminCatalog("team", payload);
-      toast.success("Member added");
+    try {
+      const payload = { ...form, photo_url: form.photo_url || null };
+      if (editing?.id) {
+        await updateAdminCatalog("team", editing.id, payload);
+        toast.success("Member updated");
+      } else {
+        await createAdminCatalog("team", payload);
+        toast.success("Member added");
+      }
+      setEditing(null); setForm(emptyMember); fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save member");
+    } finally {
+      setSaving(false);
     }
-    setEditing(null); setForm(emptyMember); fetchData();
-    setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this team member?")) return;
-    await deleteAdminCatalog("team", id);
-    toast.success("Member deleted");
-    fetchData();
+    try {
+      await deleteAdminCatalog("team", id);
+      toast.success("Member deleted");
+      fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete member");
+    }
   };
 
   if (loading) return (

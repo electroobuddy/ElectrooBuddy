@@ -78,29 +78,38 @@ const AdminProjects = () => {
   const handleSave = async () => {
     if (!form.title || !form.description || !form.category) return toast.error("All fields required");
     setSaving(true);
-    const payload = { ...form, image_url: form.image_url || null };
-    if (editing?.id) {
-      await updateAdminCatalog("projects", editing.id, payload);
-      toast.success("Project updated");
-    } else {
-      await createAdminCatalog("projects", payload);
-      toast.success("Project added");
+    try {
+      const payload = { ...form, image_url: form.image_url || null };
+      if (editing?.id) {
+        await updateAdminCatalog("projects", editing.id, payload);
+        toast.success("Project updated");
+      } else {
+        await createAdminCatalog("projects", payload);
+        toast.success("Project added");
+      }
+      setEditing(null); setForm(emptyProject);
+      invalidateProjects(); invalidateDashboardStats(); fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save project");
+    } finally {
+      setSaving(false);
     }
-    setEditing(null); setForm(emptyProject);
-    invalidateProjects(); invalidateDashboardStats(); fetchData();
-    setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this project?")) return;
-    await deleteAdminCatalog("projects", id);
-    toast.success("Project deleted");
-    invalidateProjects(); invalidateDashboardStats(); fetchData();
+    try {
+      await deleteAdminCatalog("projects", id);
+      toast.success("Project deleted");
+      invalidateProjects(); invalidateDashboardStats(); fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete project");
+    }
   };
 
   const filtered = projects.filter(p =>
-    p.title.toLowerCase().includes(search.toLowerCase()) ||
-    p.category.toLowerCase().includes(search.toLowerCase())
+    (p.title ?? "").toLowerCase().includes(search.toLowerCase()) ||
+    (p.category ?? "").toLowerCase().includes(search.toLowerCase())
   );
 
   // Unique categories for filter pills

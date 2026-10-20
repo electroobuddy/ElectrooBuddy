@@ -316,7 +316,6 @@ const ProductDetails = () => {
 
       <div className="product-details-page bg-gray-50 dark:bg-gray-900 min-h-screen">
         <style>{`
-          400;500;600;700&display=swap');
 
           .product-details-page {
             font-family: 'Poppins', sans-serif;

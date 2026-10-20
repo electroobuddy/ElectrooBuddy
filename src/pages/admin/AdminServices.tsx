@@ -92,25 +92,37 @@ const AdminServices = () => {
   const handleSave = async () => {
     if (!form.title || !form.description) return toast.error("Title and description required");
     setSaving(true);
-    const payload = { ...form, image_url: form.image_url || null };
-    if (editing?.id) {
-      await updateAdminCatalog("services", editing.id, payload);
-      toast.success("Service updated");
-    } else {
-      await createAdminCatalog("services", payload);
-      toast.success("Service added");
+    try {
+      const payload = {
+        ...form,
+        image_url: form.image_url || null,
+        service_charge: form.service_charge === "" ? null : Number(form.service_charge),
+      };
+      if (editing?.id) {
+        await updateAdminCatalog("services", editing.id, payload);
+        toast.success("Service updated");
+      } else {
+        await createAdminCatalog("services", payload);
+        toast.success("Service added");
+      }
+      setEditing(null); setForm(emptyService);
+      invalidateServices(); invalidateDashboardStats(); fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to save service");
+    } finally {
+      setSaving(false);
     }
-    setEditing(null); setForm(emptyService);
-    invalidateServices(); invalidateDashboardStats(); fetchData();
-    setSaving(false);
   };
 
   const handleDelete = async (id: string) => {
     if (!confirm("Delete this service?")) return;
-    await deleteAdminCatalog("services", id);
-    
-    toast.success("Service deleted");
-    invalidateServices(); invalidateDashboardStats(); fetchData();
+    try {
+      await deleteAdminCatalog("services", id);
+      toast.success("Service deleted");
+      invalidateServices(); invalidateDashboardStats(); fetchData();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to delete service");
+    }
   };
 
   const startEdit = (s: any) => {

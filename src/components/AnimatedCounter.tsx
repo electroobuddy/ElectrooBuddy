@@ -45,7 +45,6 @@ const AnimatedCounter = ({ end, suffix = "", prefix = "", duration = 2, label }:
   return (
     <>
       <style>{`
-        800;900&family=DM+Sans:wght@400;500&display=swap');
 
         .counter-shell {
           position: relative;

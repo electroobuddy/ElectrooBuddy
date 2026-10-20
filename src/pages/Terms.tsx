@@ -10,7 +10,6 @@ const Terms = () => {
   return (
   <div className="terms-page bg-gray-50 dark:bg-gray-900 min-h-screen">
     <style>{`
-      400;500;600;700&display=swap');
 
       .terms-page {
         font-family: 'Poppins', sans-serif;

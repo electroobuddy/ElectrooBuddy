@@ -143,7 +143,6 @@ const HeroCard = () => {
       </motion.div>
 
       <style>{`
-        500;600;700;800&family=Inter:wght@400;500;600&display=swap');
 
         :root {
           --eb-navy-deep:   #08132a;

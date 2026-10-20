@@ -64,21 +64,26 @@ const AdminSettings = () => {
 
   useEffect(() => {
     const fetchSettings = async () => {
-      const data = await listNativeSiteSettings();
-      if (data) {
-        const loaded = { ...defaultSettings };
-        data.forEach((s: any) => {
-          if (s.key in loaded) {
-            try {
-              (loaded as any)[s.key] = JSON.parse(s.value);
-            } catch {
-              (loaded as any)[s.key] = s.value;
+      try {
+        const data = await listNativeSiteSettings();
+        if (data) {
+          const loaded = { ...defaultSettings };
+          data.forEach((s: any) => {
+            if (s.key in loaded) {
+              try {
+                (loaded as any)[s.key] = JSON.parse(s.value);
+              } catch {
+                (loaded as any)[s.key] = s.value;
+              }
             }
-          }
-        });
-        setSettings(loaded);
+          });
+          setSettings(loaded);
+        }
+      } catch (error) {
+        toast.error(error instanceof Error ? error.message : "Failed to load settings");
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     };
     fetchSettings();
   }, []);

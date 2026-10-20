@@ -36,7 +36,6 @@ const ProcessTimeline = () => {
   return (
     <>
       <style>{`
-        800&family=DM+Sans:wght@400;500&display=swap');
 
         .timeline-wrap {
           position: relative;

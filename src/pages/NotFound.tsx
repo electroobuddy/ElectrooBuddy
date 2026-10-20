@@ -13,7 +13,6 @@ const NotFound = () => {
   return (
     <div className="not-found-page bg-gray-50 dark:bg-gray-900 min-h-screen flex items-center justify-center">
       <style>{`
-        400;500;600;700&display=swap');
 
         .not-found-page {
           font-family: 'Poppins', sans-serif;

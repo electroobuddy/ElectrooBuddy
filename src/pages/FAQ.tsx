@@ -70,7 +70,6 @@ const FAQ = () => {
   return (
     <div className="faq-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        400;500;600;700&family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600&display=swap');
 
         .faq-page {
           font-family: 'Poppins', sans-serif;

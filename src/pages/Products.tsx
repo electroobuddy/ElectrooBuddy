@@ -184,7 +184,6 @@ const Products = () => {
   return (
     <div className="products-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        400;500;600;700&display=swap');
         .products-page { font-family: 'Poppins', sans-serif; }
         .products-page h1,.products-page h2,.products-page h3,
         .products-page h4,.products-page h5,.products-page h6 { font-weight: 700; }

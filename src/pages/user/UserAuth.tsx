@@ -64,7 +64,6 @@ const UserAuth = () => {
   return (
     <>
       <style>{`
-        700;800;900&family=DM+Sans:wght@400;500;600&display=swap');
 
         .auth-page {
           min-height: 100vh;

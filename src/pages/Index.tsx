@@ -265,7 +265,6 @@ export default function Index() {
   return (
     <div className="bg-gray-50 dark:bg-gray-900 min-h-screen index-page">
       <style>{`
-  400;500;600;700&family=Playfair+Display:wght@700;800&family=Inter:wght@400;500;600&display=swap');
 
   .index-page {
     font-family: 'Poppins', sans-serif;

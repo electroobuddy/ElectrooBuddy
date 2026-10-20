@@ -14,8 +14,8 @@ import { getPublicStats } from "@/lib/nativeAdminOperations";
 import { getSiteSettingsCached } from "@/lib/siteSettings";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 import { createAuthoritativeServiceBooking } from "@/lib/serviceBooking";
-import { quoteNativeBooking } from "@/lib/nativeBooking";
-import type { BookingQuote } from "@/lib/apiContracts";
+import { quoteNativeBooking, createGuestNativeBooking } from "@/lib/nativeBooking";
+import type { BookingQuote, GuestCreateBookingInput } from "@/lib/apiContracts";
 import {
   type BookingFormData, type FormErrors, BLANK_FORM,
   todayISOStr, maxDateISOStr, validateBookingForm,
@@ -29,6 +29,18 @@ interface Props {
 }
 
 type FieldKey = keyof BookingFormData;
+
+const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) || "";
+const TURNSTILE_ENABLED = Boolean(TURNSTILE_SITE_KEY);
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: { sitekey: string; callback?: (token: string) => void; "expired-callback"?: (code?: unknown) => void }) => string;
+      remove: (id: string) => void;
+    };
+  }
+}
 
 // ─── Constants ──────────────────────────────────────────────────────────────────
 // Using shared constants from bookingUtils.ts
@@ -60,6 +72,42 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   const lastHashRef                     = useRef<string | null>(null);
   const controllerRef                   = useRef<AbortController | null>(null);
   const requestIdRef                    = useRef<string>(crypto.randomUUID());
+  const formTsRef                       = useRef<number>(Date.now());
+  const turnstileBoxRef                 = useRef<HTMLDivElement | null>(null);
+  const [captchaToken, setCaptchaToken] = useState("");
+
+  // Keep the human-timing token fresh while the guest fills the form (server requires age ≥ 3s, ≤ 2h)
+  useEffect(() => { formTsRef.current = Date.now(); }, [form]);
+
+  // Cloudflare Turnstile widget (guests only, only when VITE_TURNSTILE_SITE_KEY is set)
+  useEffect(() => {
+    if (user || done || !TURNSTILE_ENABLED) return;
+    let removed = false;
+    let widgetId = "";
+    const renderWidget = () => {
+      if (removed || !window.turnstile || !turnstileBoxRef.current) return;
+      window.turnstile.remove(widgetId);
+      widgetId = window.turnstile.render(turnstileBoxRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token: string) => setCaptchaToken(token),
+        "expired-callback": () => setCaptchaToken(""),
+      });
+    };
+    if (window.turnstile) renderWidget();
+    else {
+      const existing = document.querySelector<HTMLScriptElement>('script[src*="challenges.cloudflare.com/turnstile"]');
+      if (existing) existing.addEventListener("load", renderWidget, { once: true });
+      else {
+        const script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        script.async = true;
+        script.defer = true;
+        script.onload = renderWidget;
+        document.head.appendChild(script);
+      }
+    }
+    return () => { removed = true; if (widgetId && window.turnstile) { try { window.turnstile.remove(widgetId); } catch { /* already removed */ } } };
+  }, [user, done, sessionCount]);
 
   const counters = useMemo(() => ({
     experience: YEARS_OF_EXPERIENCE,
@@ -135,6 +183,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   }, [activeSubscription, bookingServices, form.custom_service_demand, form.service_type, useFreeServiceCall, user]);
 
   const refreshBookingQuote = useCallback(async (coupon?: string | null, showError = false) => {
+    if (!user) { setBookingQuote(null); setQuoteError(null); setQuoteLoading(false); return null; }
     const input = quoteInputForCurrentSelection(coupon);
     if (!input) { setBookingQuote(null); setQuoteError(null); return null; }
     const requestId = ++quoteRequestRef.current;
@@ -155,7 +204,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     } finally {
       if (requestId === quoteRequestRef.current) setQuoteLoading(false);
     }
-  }, [quoteInputForCurrentSelection]);
+  }, [quoteInputForCurrentSelection, user]);
 
   useEffect(() => {
     const timer = window.setTimeout(() => { void refreshBookingQuote(applied?.success ? couponCode : null); }, 180);
@@ -205,7 +254,6 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   const handleSubmit = useCallback(async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (submitting) return;
-    if (!user) { toast.error("Please sign in before booking a service."); return; }
 
     // Touch all → reveal every error
     setTouched(Object.fromEntries(Object.keys(BLANK_FORM).map(k => [k, true])) as any);
@@ -231,8 +279,16 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       return;
     }
 
-    const latestQuote = await refreshBookingQuote(applied?.success ? couponCode : null, true);
-    if (!latestQuote) return;
+    // Guest submissions must clear the bot check when Turnstile is configured
+    if (!user && TURNSTILE_ENABLED && !captchaToken) {
+      toast.error("Please complete the security check before submitting.");
+      return;
+    }
+
+    if (user) {
+      const latestQuote = await refreshBookingQuote(applied?.success ? couponCode : null, true);
+      if (!latestQuote) return;
+    }
 
     controllerRef.current?.abort();
     controllerRef.current = new AbortController();
@@ -243,13 +299,34 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       const selectedService = bookingServices.find((svc) => svc.title === form.service_type);
       if (!selectedService?.id && form.service_type !== "Custom Service") throw new Error("Please select a valid service");
       const booking = await withTimeout(
-        createAuthoritativeServiceBooking(form, {
-          serviceId: selectedService?.id || "",
-          couponCode: applied?.success ? couponCode : undefined,
-          useSubscription: Boolean(activeSubscription),
-          useFreeServiceCall: Boolean(useFreeServiceCall),
-          requestId: requestIdRef.current,
-        }),
+        user
+          ? createAuthoritativeServiceBooking(form, {
+              serviceId: selectedService?.id || "",
+              couponCode: applied?.success ? couponCode : undefined,
+              useSubscription: Boolean(activeSubscription),
+              useFreeServiceCall: Boolean(useFreeServiceCall),
+              requestId: requestIdRef.current,
+            })
+          : createGuestNativeBooking({
+              requestId: requestIdRef.current,
+              serviceId: selectedService?.id || null,
+              isCustomService: form.service_type === "Custom Service",
+              name: form.name.trim(),
+              phone: form.phone.trim(),
+              email: form.email.trim() || null,
+              address: form.address.trim(),
+              exactLocation: form.exact_location.trim() || null,
+              preferredDate: form.preferred_date,
+              preferredTime: form.preferred_time,
+              description: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : form.description.trim() || null,
+              customServiceDemand: form.custom_service_demand.trim() || null,
+              isSwitchWorking: form.is_switch_working || null,
+              hasOldFan: form.has_old_fan || null,
+              isElectricitySupplyOn: form.is_electricity_supply_on || null,
+              website: "",
+              formTs: formTsRef.current,
+              captchaToken: captchaToken || null,
+            }),
         12000,
         "booking-create"
       );
@@ -293,6 +370,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       setTrackingToken(booking.tracking_token || "");
       setDone(true);
       requestIdRef.current = crypto.randomUUID();
+      setCaptchaToken("");
       setForm({ ...BLANK_FORM, service_type: preselectedService || "" });
       setTouched({});
       setCouponCode("");
@@ -312,7 +390,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     } finally {
       setSubmitting(false);
     }
-  }, [form, submitting, couponCode, applied, user, sessionCount, activeSubscription, useFreeServiceCall, bookingServices, refreshBookingQuote, preselectedService]);
+  }, [form, submitting, couponCode, applied, user, sessionCount, activeSubscription, useFreeServiceCall, bookingServices, refreshBookingQuote, preselectedService, captchaToken]);
 
   // ── Sidebar ──────────────────────────────────────────────────────────────
   const sideStats = [
@@ -426,7 +504,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                       {supportPhone ? (<>Need faster help? Call us at{" "}<a href={`tel:${supportPhone}`} className="text-blue-600 dark:text-blue-400 font-semibold underline">{supportPhone}</a></>) : "We will contact you using the details you submitted."}.
                     </p>
                   </div>
-                  {trackingToken && <div className="mb-4 p-3 rounded-lg bg-muted text-left"><p className="text-xs font-semibold text-muted-foreground mb-1">Secure tracking code</p><code className="text-xs break-all select-all">{trackingToken}</code><p className="text-xs text-muted-foreground mt-1">Save this code to track the booking without signing in.</p></div>}
+                  {trackingToken && <div className="mb-4 p-3 rounded-lg bg-muted text-left"><p className="text-xs font-semibold text-muted-foreground mb-1">Secure tracking code</p><code className="text-xs break-all select-all">{trackingToken}</code><p className="text-xs text-muted-foreground mt-1">Save this code to track the booking without signing in.{user ? " You can also see this booking in My Bookings." : " No account needed — use it on our Track page anytime."}</p></div>}
                   {sessionCount < SESSION_LIMIT && (
                     <button
                       onClick={() => setDone(false)}
@@ -670,7 +748,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                     </div>
                   )}
 
-                  {/* Row 3 — Coupon + Discount */}
+                  {/* Row 3 — Coupon + Discount (signed-in users only; guests get server-priced bookings) */}
+                  {user && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <Field label="Coupon Code">
                       <div className="flex gap-2">
@@ -737,6 +816,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                       )}
                     </Field>
                   </div>
+                  )}
 
                   {/* Row 4 — Address + Landmark */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -825,6 +905,22 @@ export default function RequestServiceSection({ preselectedService, preselectedO
 
                   {/* Submit */}
                   <div className="pt-1 space-y-3">
+                    {/* Honeypot — invisible to humans, bots fill it and get silently discarded */}
+                    <input
+                      type="text"
+                      name="website"
+                      value=""
+                      readOnly
+                      autoComplete="off"
+                      tabIndex={-1}
+                      aria-hidden="true"
+                      style={{ position: "absolute", left: "-9999px", top: "-9999px", width: "1px", height: "1px", opacity: 0 }}
+                    />
+                    {TURNSTILE_ENABLED && !user && (
+                      <div className="flex justify-center">
+                        <div ref={turnstileBoxRef} className="min-h-[65px]" />
+                      </div>
+                    )}
                     <button
                       type="submit"
                       disabled={submitting || sessionCount >= SESSION_LIMIT}

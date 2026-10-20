@@ -338,7 +338,6 @@ const OrderSuccess = () => {
         <meta charset="utf-8" />
         <title>Receipt – ${escapeHtml(orderId)}</title>
         <style>
-          400;500;600;700&display=swap');
           * { margin:0; padding:0; box-sizing:border-box; }
           body {
             font-family: 'Poppins', sans-serif;
@@ -542,7 +541,6 @@ const OrderSuccess = () => {
 
       <div className="order-success-page bg-gray-50 dark:bg-gray-900 min-h-screen">
         <style>{`
-          400;500;600;700&display=swap');
 
           .order-success-page {
             font-family: 'Poppins', sans-serif;

@@ -454,7 +454,6 @@ const Checkout = () => {
   return (
     <div className="checkout-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        400;500;600;700&display=swap');
 
         .checkout-page {
           font-family: 'Poppins', sans-serif;

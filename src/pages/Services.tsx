@@ -106,7 +106,6 @@ const Services = () => {
         }}
       />
       <style>{`
-        400;500;600;700&display=swap');
 
         .services-page {
           font-family: 'Poppins', sans-serif;

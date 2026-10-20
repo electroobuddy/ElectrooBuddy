@@ -48,7 +48,6 @@ const TestimonialSlider = ({ testimonials }: { testimonials: Testimonial[] }) =>
   return (
     <>
       <style>{`
-        800&family=DM+Sans:ital,wght@0,400;0,500;1,400&display=swap');
 
         .testimonial-outer {
           position: relative;

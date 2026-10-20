@@ -37,7 +37,7 @@ const AdminMessages = () => {
 
   const filtered = messages.filter(m => {
     const q = search.toLowerCase();
-    const matchSearch = m.name.toLowerCase().includes(q) ||
+    const matchSearch = (m.name || "").toLowerCase().includes(q) ||
       (m.email || "").toLowerCase().includes(q) ||
       (m.message || "").toLowerCase().includes(q);
     const matchFilter = filter === "all" || (filter === "read" ? m.read : !m.read);
@@ -124,7 +124,7 @@ const AdminMessages = () => {
                 <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 font-bold text-sm ${
                   !m.read ? "bg-blue-600 text-white" : "bg-zinc-100 dark:bg-zinc-800 text-zinc-500"
                 }`}>
-                  {m.name[0]?.toUpperCase()}
+                  {m.name?.[0]?.toUpperCase()}
                 </div>
 
                 <div className="flex-1 min-w-0">
@@ -189,7 +189,7 @@ const MessageDetail = ({ message: m, onClose }: { message: any; onClose: () => v
     <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-100 dark:border-zinc-800 flex-shrink-0">
       <div className="flex items-center gap-3">
         <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-violet-500 flex items-center justify-center flex-shrink-0">
-          <span className="text-white font-bold">{m.name[0]?.toUpperCase()}</span>
+          <span className="text-white font-bold">{m.name?.[0]?.toUpperCase()}</span>
         </div>
         <div>
           <p className="font-bold text-zinc-900 dark:text-white">{m.name}</p>

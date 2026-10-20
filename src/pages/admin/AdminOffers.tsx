@@ -1,4 +1,4 @@
-import { validateImageUpload } from "@/lib/security";
+import { validateImageUpload, sanitizeExternalUrl } from "@/lib/security";
 import { logger } from "@/lib/logger";
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { listAdminCatalog, listAdminOffers, createAdminOffer, updateAdminOffer, deleteAdminOffer } from "@/lib/nativeCatalogAdmin";
@@ -146,7 +146,10 @@ const AdminOffers = () => {
     setUploading(true);
     try {
       const validationError = validateImageUpload(file);
-      if (validationError) { toast.error(validationError); return; }
+      if (validationError) {
+        toast({ title: "Invalid image", description: validationError, variant: "destructive" });
+        return;
+      }
       const uploaded = await uploadAdminImage(file, "offers");
       setFormData({ ...formData, banner_url: uploaded.url });
       toast({ title: "Image uploaded successfully" });

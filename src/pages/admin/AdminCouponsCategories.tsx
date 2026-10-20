@@ -110,20 +110,20 @@ const AdminCouponsCategories = () => {
           max_discount_amount: item.max_discount_amount ? Number(item.max_discount_amount) : null,
           usage_limit: item.usage_limit,
           used_count: item.used_count,
-          usage_limit_per_user: null, // Not returned by function
+          usage_limit_per_user: item.usage_limit_per_user ?? null,
           valid_from: item.valid_from,
-          valid_until: item.valid_until,
-          applicable_categories: null,
-          applicable_products: null,
-          excluded_products: null,
-          applicable_to_all: true,
-          applicable_to_new_users_only: false,
-          minimum_cart_items: 1,
+          valid_until: item.valid_until ?? null,
+          applicable_categories: item.applicable_categories ?? null,
+          applicable_products: item.applicable_products ?? null,
+          excluded_products: item.excluded_products ?? null,
+          applicable_to_all: item.applicable_to_all ?? true,
+          applicable_to_new_users_only: item.applicable_to_new_users_only ?? false,
+          minimum_cart_items: item.minimum_cart_items ?? 1,
           is_active: item.is_active,
-          auto_apply: false,
-          created_by: null,
+          auto_apply: item.auto_apply ?? false,
+          created_by: item.created_by ?? null,
           created_at: item.created_at,
-          updated_at: new Date().toISOString()
+          updated_at: item.updated_at
         }));
         
         setCoupons(transformedCoupons);
@@ -235,6 +235,11 @@ const AdminCouponsCategories = () => {
   };
 
   const inputClass = "w-full px-3.5 py-2.5 rounded-xl border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-800 text-zinc-900 dark:text-zinc-100 placeholder-zinc-400 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500/30 focus:border-blue-400 transition-all";
+
+  const toLocalInput = (v: string | null | undefined) => {
+    const d = new Date(v ?? "");
+    return Number.isNaN(d.getTime()) ? "" : d.toISOString().slice(0, 16);
+  };
 
   if (showForm) {
     return (
@@ -361,8 +366,8 @@ const AdminCouponsCategories = () => {
                       <label className="block text-sm font-medium mb-1.5">Valid From</label>
                       <input
                         type="datetime-local"
-                        value={new Date(formData.valid_from).toISOString().slice(0, 16)}
-                        onChange={(e) => setFormData({ ...formData, valid_from: new Date(e.target.value).toISOString() })}
+                        value={toLocalInput(formData.valid_from)}
+                        onChange={(e) => { if (e.target.value) setFormData({ ...formData, valid_from: new Date(e.target.value).toISOString() }); }}
                         className={inputClass}
                       />
                     </div>
@@ -370,7 +375,7 @@ const AdminCouponsCategories = () => {
                       <label className="block text-sm font-medium mb-1.5">Valid Until</label>
                       <input
                         type="datetime-local"
-                        value={formData.valid_until ? new Date(formData.valid_until).toISOString().slice(0, 16) : ""}
+                        value={formData.valid_until ? toLocalInput(formData.valid_until) : ""}
                         onChange={(e) => setFormData({ ...formData, valid_until: e.target.value ? new Date(e.target.value).toISOString() : null })}
                         className={inputClass}
                       />
@@ -778,7 +783,7 @@ const AdminCouponsCategories = () => {
           </div>
         )}
 
-        {((activeTab === "coupons" && coupons.length === 0) || (activeTab === "categories" && categories.length === 0)) && !loading && (
+        {!loading && (activeTab === "coupons" ? coupons : categories).length === 0 && (
           <div className="py-20 text-center">
             <div className="mx-auto w-16 h-16 rounded-full bg-zinc-100 dark:bg-zinc-800 flex items-center justify-center mb-4">
               {activeTab === "coupons" ? <Gift size={32} className="text-zinc-300" /> : <Tag size={32} className="text-zinc-300" />}

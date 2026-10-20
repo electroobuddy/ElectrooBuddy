@@ -29,7 +29,6 @@ const ServiceCard = ({ service }: { service: DbService }) => {
   return (
     <>
       <style>{`
-        500;600;700&display=swap');
 
         .service-card {
           position: relative;

@@ -191,7 +191,6 @@ const Navbar = memo(() => {
   return (
     <>
       <style>{`
-        400;500;600;700;800&display=swap');
 
         .navbar-root {
           position: sticky;

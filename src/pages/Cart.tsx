@@ -3,8 +3,6 @@
 // import { ShoppingCart, Trash2, Plus, Minus, Package, ArrowRight, Zap } from "lucide-react";
 
 // import { useCart } from "@/contexts/CartContext";
-import ApiState from "@/components/ApiState";
-import MutationButton from "@/components/MutationButton";
 
 // const Cart = () => {
 //   const navigate = useNavigate();
@@ -298,7 +296,6 @@ const Cart = () => {
     return (
       <div className="cart-page bg-gray-50 dark:bg-gray-900 min-h-screen">
         <style>{`
-          400;500;600;700&display=swap');
 
           .cart-page {
             font-family: 'Poppins', sans-serif;
@@ -333,7 +330,6 @@ const Cart = () => {
   return (
     <div className="cart-page bg-gray-50 dark:bg-gray-900 min-h-screen">
       <style>{`
-        400;500;600;700&display=swap');
 
         .cart-page {
           font-family: 'Poppins', sans-serif;

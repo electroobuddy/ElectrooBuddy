@@ -10,7 +10,6 @@ const Privacy = () => {
   return (
   <div className="privacy-page bg-gray-50 dark:bg-gray-900 min-h-screen">
     <style>{`
-      400;500;600;700&display=swap');
 
       .privacy-page {
         font-family: 'Poppins', sans-serif;

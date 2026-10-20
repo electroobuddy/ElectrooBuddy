@@ -1,7 +1,8 @@
 import { nativeApiFetch } from './apiClient';
-import type { BookingOperationalUpdate, BookingQuote, BookingQuoteInput, BookingStatus, CreateBookingInput, NativeBooking, NativeTechnician } from './apiContracts';
+import type { BookingOperationalUpdate, BookingQuote, BookingQuoteInput, CreateBookingInput, GuestCreateBookingInput, BookingStatus, NativeBooking, NativeTechnician } from './apiContracts';
 export async function quoteNativeBooking(input:BookingQuoteInput){return nativeApiFetch<BookingQuote>('/bookings/quote',{method:'POST',body:JSON.stringify(input)});}
 export async function createNativeBooking(input:CreateBookingInput){return nativeApiFetch<NativeBooking>('/bookings',{method:'POST',body:JSON.stringify(input)});}
+export async function createGuestNativeBooking(input:GuestCreateBookingInput){return nativeApiFetch<NativeBooking>('/public/bookings',{method:'POST',body:JSON.stringify(input)});}
 export async function listNativeBookings(status?:BookingStatus){return nativeApiFetch<NativeBooking[]>(`/bookings${status?`?status=${encodeURIComponent(status)}`:''}`);}
 export async function getNativeBooking(id:string){return nativeApiFetch<NativeBooking>(`/bookings/${id}`);}
 export async function cancelNativeBooking(id:string){return nativeApiFetch<{cancelled:true}>(`/bookings/${id}/cancel`,{method:'POST'});}

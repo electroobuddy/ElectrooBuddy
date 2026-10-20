@@ -106,7 +106,7 @@ const AdminPayments = () => {
   const processedRefundTotal = refunds.filter(r => r.status === "processed").reduce((n,r) => n + Number(r.amount), 0);
   const grossCaptured = orders.filter(o => ["paid","partially_refunded","refunded"].includes(o.payment_status)).reduce((n,o) => n + Number(o.total_amount), 0);
   const totalRevenue = Math.max(0, grossCaptured - processedRefundTotal);
-  const pendingAmount = orders.filter(o => o.payment_status === "pending").reduce((s, o) => s + o.total_amount, 0);
+  const pendingAmount = orders.filter(o => o.payment_status === "pending").reduce((s, o) => s + Number(o.total_amount || 0), 0);
   const failedCount = orders.filter(o => o.payment_status === "failed").length;
   const paidCount = orders.filter(o => o.payment_status === "paid").length;
 

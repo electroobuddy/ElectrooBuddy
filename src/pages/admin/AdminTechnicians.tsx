@@ -126,8 +126,17 @@ const AdminTechnicians = () => {
     setSaving(true);
     try {
       // Generate random password if not provided
-      const password = form.password;
-      if (!password || password.length < 8) { toast.error('Enter a password of at least 8 characters.'); setSaving(false); return; }
+      const password = form.password || (() => {
+        const set = "abcdefghijkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+        let out = "";
+        while (out.length < 12) {
+          for (const b of crypto.getRandomValues(new Uint8Array(16))) {
+            if (b < 224 && out.length < 12) out += set[b % set.length];
+          }
+        }
+        return out;
+      })();
+      if (form.password && form.password.length < 8) { toast.error('Enter a password of at least 8 characters.'); setSaving(false); return; }
 
       let result: any;
       result = await createNativeTechnician({
@@ -295,7 +304,7 @@ const AdminTechnicians = () => {
   const filtered = technicians.filter(t => {
     const matchesFilter = filter === "all" || t.status === filter;
     const matchesSearch = t.name.toLowerCase().includes(search.toLowerCase()) ||
-                         t.email.toLowerCase().includes(search.toLowerCase()) ||
+                         (t.email || "").toLowerCase().includes(search.toLowerCase()) ||
                          (t.phone && t.phone.includes(search));
     return matchesFilter && matchesSearch;
   });
@@ -441,9 +450,9 @@ const AdminTechnicians = () => {
                   <div className="flex items-center gap-2 text-zinc-600 dark:text-zinc-400">
                     <Briefcase size={14} /> {tech.experience} years experience
                   </div>
-                  {tech.skills.length > 0 && (
+                  {(tech.skills?.length ?? 0) > 0 && (
                     <div className="flex flex-wrap gap-1.5 mt-2">
-                      {tech.skills.slice(0, 5).map((skill, i) => (
+                      {(tech.skills ?? []).slice(0, 5).map((skill, i) => (
                         <span key={i} className="px-2 py-1 bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-300 text-xs rounded-lg">
                           {skill}
                         </span>

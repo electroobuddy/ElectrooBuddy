@@ -139,9 +139,9 @@ export function createGuestBookingRateLimiter(env: AppEnv) {
 const GUEST_FORM_MIN_AGE_MS = 3_000;
 const GUEST_FORM_MAX_AGE_MS = 2 * 60 * 60 * 1000;
 
-function fakeSuccess(res: import('express').Response) {
-  // Bots must not learn their submission was silently discarded.
-  res.status(201).json({ success: true, data: { id: crypto.randomUUID(), status: 'pending', guest: true } });
+function rejectGuestBot(res: import('express').Response) {
+  // Deliberately generic: bots must not learn which signal caught them. Honest clients never hit this path.
+  res.status(400).json({ success: false, error: { code: 'BOOKING_REQUEST_INVALID', message: 'Your booking request could not be processed. Please try again.' } });
 }
 
 export function createGuestBookingAntiBotMiddleware(env: AppEnv) {
@@ -150,25 +150,46 @@ export function createGuestBookingAntiBotMiddleware(env: AppEnv) {
       const body = (req.body ?? {}) as Record<string, unknown>;
 
       // Honeypot: hidden field only bots fill.
-      if (typeof body.website === 'string' && body.website.trim().length > 0) return fakeSuccess(res);
+      if (typeof body.website === 'string' && body.website.trim().length > 0) return rejectGuestBot(res);
 
       // Timing: real humans need more than a few seconds to fill the form.
       const formTs = typeof body.formTs === 'number' ? body.formTs : Number(body.formTs);
       const age = Date.now() - formTs;
-      if (!Number.isFinite(age) || age < GUEST_FORM_MIN_AGE_MS || age > GUEST_FORM_MAX_AGE_MS) return fakeSuccess(res);
+      if (!Number.isFinite(age)) return rejectGuestBot(res);
+      if (age < GUEST_FORM_MIN_AGE_MS) return rejectGuestBot(res);
+      if (age > GUEST_FORM_MAX_AGE_MS) {
+        res.status(400).json({ success: false, error: { code: 'BOOKING_FORM_STALE', message: 'This form has been open for too long. Please submit again.' } });
+        return;
+      }
 
-      // Cloudflare Turnstile (recommended once keys are configured; enforced when TURNSTILE_REQUIRED=true)
+      // Cloudflare Turnstile: enforced whenever a secret is configured. FE must send a token (VITE_TURNSTILE_SITE_KEY).
       if (env.TURNSTILE_SECRET_KEY) {
         const token = typeof body.captchaToken === 'string' ? body.captchaToken : '';
-        if (!token) return fakeSuccess(res);
-        const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ secret: env.TURNSTILE_SECRET_KEY, response: token, remoteip: req.ip }),
-          signal: AbortSignal.timeout(5_000)
-        });
-        const result = (await response.json().catch(() => null)) as { success?: boolean } | null;
-        if (!result?.success) return fakeSuccess(res);
+        if (!token) {
+          if (env.TURNSTILE_REQUIRED) console.error('[guest-booking] captcha token missing but TURNSTILE_REQUIRED=true — is VITE_TURNSTILE_SITE_KEY configured on the frontend?');
+          res.status(400).json({ success: false, error: { code: 'CAPTCHA_REQUIRED', message: 'Please complete the security check before submitting.' } });
+          return;
+        }
+        let result: { success?: boolean } | null;
+        try {
+          const response = await fetch('https://challenges.cloudflare.com/turnstile/v0/siteverify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ secret: env.TURNSTILE_SECRET_KEY, response: token, remoteip: req.ip }),
+            signal: AbortSignal.timeout(5_000)
+          });
+          result = await response.json() as { success?: boolean };
+        } catch {
+          // Fail closed: a Turnstile outage must not reopen the endpoint to unchecked traffic.
+          console.error('[guest-booking] Turnstile siteverify request failed (network/timeout)');
+          res.status(503).json({ success: false, error: { code: 'CAPTCHA_UNAVAILABLE', message: 'The security check is temporarily unavailable. Please try again in a few minutes.' } });
+          return;
+        }
+        if (!result?.success) {
+          if (env.TURNSTILE_REQUIRED) console.error('[guest-booking] Turnstile siteverify rejected a token — if real users are seeing this, check the frontend site key matches the backend secret');
+          res.status(400).json({ success: false, error: { code: 'CAPTCHA_FAILED', message: 'The security check failed. Please complete it again and submit.' } });
+          return;
+        }
       } else if (env.TURNSTILE_REQUIRED) {
         throw new Error('TURNSTILE_REQUIRED is set but TURNSTILE_SECRET_KEY is missing');
       }

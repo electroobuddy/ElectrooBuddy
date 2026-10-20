@@ -1,4 +1,5 @@
-// One-off smoke test for POST /public/bookings (guest flow). Safe output: prints only ids/statuses.
+// Smoke test for POST /public/bookings (guest flow). Safe output: prints only ids/statuses.
+// Requires the dev API on localhost:3001. Each scenario uses a fresh phone to stay under the per-phone caps.
 import { loadEnv } from '../src/config/env.js';
 import { createDatabaseClient } from '../src/config/database.js';
 import { pino } from 'pino';
@@ -11,14 +12,13 @@ if (!svc) { console.error('No bookable service found'); process.exit(1); }
 
 const base = `${process.env.SMOKE_API || 'http://localhost:3001'}${env.API_PREFIX}`;
 const ist = new Intl.DateTimeFormat('en-CA', { timeZone: 'Asia/Kolkata', year: 'numeric', month: '2-digit', day: '2-digit' }).format(new Date(Date.now() + 86400000));
-const phone = '9000000' + String(Math.floor(Math.random() * 900) + 100);
-const sharedRequestId = crypto.randomUUID();
+const newPhone = () => '9' + String(Math.floor(Math.random() * 900000000) + 100000000);
 
-const payload = (over = {}) => ({
-  requestId: sharedRequestId,
+const payload = (over: Record<string, unknown> = {}) => ({
+  requestId: crypto.randomUUID(),
   serviceId: svc.id,
   name: 'Smoke Guest',
-  phone,
+  phone: newPhone(),
   email: null,
   address: '42 Test Smoke Street, QA Colony, Hyderabad 500001',
   preferredDate: ist,
@@ -30,23 +30,35 @@ const payload = (over = {}) => ({
   ...over,
 });
 
-async function post(label, body) {
-  const r = await fetch(`${base}/public/bookings`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
-  const j = await r.json().catch(() => null);
-  console.log(label, '→', r.status, JSON.stringify({ id: j?.data?.id, status: j?.data?.status, code: j?.error?.code, idem: j?.data?.idempotent, token: j?.data?.tracking_token ? 'present' : (j?.data?.id ? 'absent' : 'n/a') }));
+let ipSeq = 0;
+// trust proxy=1 → req.ip follows X-Forwarded-For. Rotate per scenario so the 5/15min limiter can't mask results.
+const nextIp = () => `10.9.${ipSeq >> 8 & 255}.${ipSeq++ & 255}`;
+
+async function post(label: string, body: unknown, ip = nextIp()) {
+  const r = await fetch(`${base}/public/bookings`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': ip }, body: JSON.stringify(body) });
+  const j = (await r.json().catch(() => null)) as any;
+  const out = { id: j?.data?.id, status: j?.data?.status, code: j?.error?.code, fields: j?.error?.fields, idem: j?.data?.idempotent, token: j?.data?.tracking_token ? 'present' : 'absent' };
+  console.log(label.padEnd(15), '→', r.status, JSON.stringify(out));
   return { status: r.status, body: j };
 }
 
-// 1. fresh guest booking → 201 + tracking token
-const first = await post('valid         ', payload());
-// 2. exact retry (same phone + requestId) → idempotent replay of same id
-const again = await post('idempotent    ', payload());
-// 3. same phone+service+date, new requestId → 409 duplicate
-await post('duplicate     ', payload({ requestId: crypto.randomUUID() }));
-// 4. honeypot filled → fake success with random id, no DB row
-const honeypot = await post('honeypot      ', payload({ website: 'http://spam.example', requestId: crypto.randomUUID() }));
-// 5. instant bot submit (formTs=now) → fake success
-const fast = await post('too-fast      ', payload({ formTs: Date.now(), requestId: crypto.randomUUID() }));
-console.log('idempotent same id:', again.body?.data?.id === first.body?.data?.id);
-console.log('honeypot fabricated (differs from real):', honeypot.body?.data?.id !== first.body?.data?.id);
-console.log('too-fast fabricated:', fast.body?.data?.tracking_token == null);
+const legacy = await fetch(`${base}/guest/bookings`, { method: 'POST', headers: { 'Content-Type': 'application/json', 'X-Forwarded-For': nextIp() }, body: JSON.stringify(payload()) });
+console.log('legacy route    →', legacy.status, '(expect 404 — old endpoint must be gone)');
+
+const reqId = crypto.randomUUID();
+const phone = newPhone();
+const first = await post('valid         ', payload({ requestId: reqId, phone }));
+const again = await post('retry-same-id ', payload({ requestId: reqId, phone }));
+await post('duplicate     ', payload({ phone, requestId: crypto.randomUUID() }));
+await post('honeypot      ', payload({ website: 'http://spam.example', requestId: crypto.randomUUID() }));
+await post('too-fast      ', payload({ formTs: Date.now(), requestId: crypto.randomUUID() }));
+await post('stale formTs  ', payload({ formTs: Date.now() - 3 * 60 * 60 * 1000, requestId: crypto.randomUUID() }));
+await post('bad time      ', payload({ preferredTime: '24:99', requestId: crypto.randomUUID() }));
+await post('email present ', payload({ email: 'Smoke.Guest@Example.com', requestId: crypto.randomUUID() }));
+await post('custom svc    ', payload({ serviceId: null, isCustomService: true, customServiceDemand: 'Replace the old MCB board and add two new light points in the kitchen', requestId: crypto.randomUUID() }));
+
+// Same-IP burst: limiter default is 5/15min, so request #6 from one IP must be 429.
+const burstIp = nextIp();
+for (let i = 0; i < 6; i++) await post(`burst #${i + 1}    `, payload({ requestId: crypto.randomUUID() }), burstIp);
+
+console.log('retry same id + re-derived token:', again.body?.data?.id === first.body?.data?.id && !!again.body?.data?.tracking_token);

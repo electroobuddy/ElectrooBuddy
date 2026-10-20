@@ -190,21 +190,6 @@ export interface CreateBookingInput extends BookingQuoteInput {
   hasOldFan?: string | null;
   isElectricitySupplyOn?: string | null;
 }
-export interface GuestCreateBookingInput {
-  requestId: Id;
-  serviceId?: Id | null;
-  isCustomService?: boolean;
-  name: string; phone: string; email?: string | null; address: string;
-  exactLocation?: string | null; preferredDate: string; preferredTime: string;
-  description?: string | null;
-  customServiceDemand?: string | null;
-  isSwitchWorking?: string | null;
-  hasOldFan?: string | null;
-  isElectricitySupplyOn?: string | null;
-  website?: string;
-  formTs?: number;
-  captchaToken?: string | null;
-}
 export interface BookingOperationalUpdate {
   name?: string; phone?: string; email?: string; address?: string;
   preferredDate?: string; preferredTime?: string; description?: string | null;

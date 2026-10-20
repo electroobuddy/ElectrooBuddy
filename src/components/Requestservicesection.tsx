@@ -14,8 +14,9 @@ import { getPublicStats } from "@/lib/nativeAdminOperations";
 import { getSiteSettingsCached } from "@/lib/siteSettings";
 import { sendAdminNotificationAsync } from "@/utils/notificationUtils";
 import { createAuthoritativeServiceBooking } from "@/lib/serviceBooking";
-import { quoteNativeBooking, createGuestNativeBooking } from "@/lib/nativeBooking";
-import type { BookingQuote, GuestCreateBookingInput } from "@/lib/apiContracts";
+import { quoteNativeBooking } from "@/lib/nativeBooking";
+import { createGuestBooking } from "@/lib/guestBookingApi";
+import type { BookingQuote } from "@/lib/apiContracts";
 import {
   type BookingFormData, type FormErrors, BLANK_FORM,
   todayISOStr, maxDateISOStr, validateBookingForm,
@@ -74,10 +75,12 @@ export default function RequestServiceSection({ preselectedService, preselectedO
   const requestIdRef                    = useRef<string>(crypto.randomUUID());
   const formTsRef                       = useRef<number>(Date.now());
   const turnstileBoxRef                 = useRef<HTMLDivElement | null>(null);
+  const honeypotRef                     = useRef<HTMLInputElement | null>(null);
   const [captchaToken, setCaptchaToken] = useState("");
 
-  // Keep the human-timing token fresh while the guest fills the form (server requires age ≥ 3s, ≤ 2h)
-  useEffect(() => { formTsRef.current = Date.now(); }, [form]);
+  // A fresh timing token + captcha slot each time the form reopens after a completion
+  useEffect(() => { if (!done) { formTsRef.current = Date.now(); setCaptchaToken(""); } }, [done]);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
 
   // Cloudflare Turnstile widget (guests only, only when VITE_TURNSTILE_SITE_KEY is set)
   useEffect(() => {
@@ -86,7 +89,8 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     let widgetId = "";
     const renderWidget = () => {
       if (removed || !window.turnstile || !turnstileBoxRef.current) return;
-      window.turnstile.remove(widgetId);
+      if (widgetId) window.turnstile.remove(widgetId);
+      setCaptchaToken("");
       widgetId = window.turnstile.render(turnstileBoxRef.current, {
         sitekey: TURNSTILE_SITE_KEY,
         callback: (token: string) => setCaptchaToken(token),
@@ -107,7 +111,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       }
     }
     return () => { removed = true; if (widgetId && window.turnstile) { try { window.turnstile.remove(widgetId); } catch { /* already removed */ } } };
-  }, [user, done, sessionCount]);
+  }, [user, done]);
 
   const counters = useMemo(() => ({
     experience: YEARS_OF_EXPERIENCE,
@@ -298,7 +302,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
     try {
       const selectedService = bookingServices.find((svc) => svc.title === form.service_type);
       if (!selectedService?.id && form.service_type !== "Custom Service") throw new Error("Please select a valid service");
-      const booking = await withTimeout(
+      const booking = await withTimeout<{ id: string; tracking_token?: string }>(
         user
           ? createAuthoritativeServiceBooking(form, {
               serviceId: selectedService?.id || "",
@@ -307,7 +311,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
               useFreeServiceCall: Boolean(useFreeServiceCall),
               requestId: requestIdRef.current,
             })
-          : createGuestNativeBooking({
+          : createGuestBooking({
               requestId: requestIdRef.current,
               serviceId: selectedService?.id || null,
               isCustomService: form.service_type === "Custom Service",
@@ -323,7 +327,7 @@ export default function RequestServiceSection({ preselectedService, preselectedO
               isSwitchWorking: form.is_switch_working || null,
               hasOldFan: form.has_old_fan || null,
               isElectricitySupplyOn: form.is_electricity_supply_on || null,
-              website: "",
+              website: honeypotRef.current?.value ?? "",
               formTs: formTsRef.current,
               captchaToken: captchaToken || null,
             }),
@@ -380,6 +384,13 @@ export default function RequestServiceSection({ preselectedService, preselectedO
       const isTimeout = err?.message?.includes("TIMEOUT");
       const isDupe    = err?.code === "23505"; // Postgres unique_violation
       const isNetwork = err?.message?.includes("fetch") || err?.message?.includes("network");
+      if (err?.code === "BOOKING_FORM_STALE" || err?.code === "CAPTCHA_REQUIRED") {
+        formTsRef.current = Date.now();
+      }
+      if (err?.code === "CAPTCHA_FAILED") {
+        formTsRef.current = Date.now();
+        setCaptchaResetKey((k) => k + 1); // Turnstile tokens are single-use; re-render a fresh widget
+      }
       toast.error(
         isDupe    ? "This booking already exists. Please check your submissions." :
         isTimeout ? "Request timed out. Your booking may have been saved - please check before retrying." :
@@ -906,11 +917,11 @@ export default function RequestServiceSection({ preselectedService, preselectedO
                   {/* Submit */}
                   <div className="pt-1 space-y-3">
                     {/* Honeypot — invisible to humans, bots fill it and get silently discarded */}
+                    {/* Honeypot — invisible to humans, bots fill it and get rejected */}
                     <input
                       type="text"
                       name="website"
-                      value=""
-                      readOnly
+                      ref={honeypotRef}
                       autoComplete="off"
                       tabIndex={-1}
                       aria-hidden="true"

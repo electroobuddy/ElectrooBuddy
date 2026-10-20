@@ -1,5 +1,6 @@
-import { createHash, randomBytes } from 'node:crypto';
+import { createHash, createHmac, randomBytes } from 'node:crypto';
 import { AppError } from '../errors/app-error.js';
+import type { AppEnv } from '../config/env.js';
 import type { DatabaseClient, QueryableDatabase } from '../config/database.js';
 import type { BookingRepository } from '../repositories/booking.repository.js';
 const money=(v:number)=>Math.round((v+Number.EPSILON)*100)/100;
@@ -10,7 +11,7 @@ export interface GuestBookingCreateInput {requestId:string;serviceId?:string|nul
 type FinancialQuote={service:any;base:number;coupon:any|null;couponDiscount:number;subscription:any|null;subscriptionDiscount:number;benefit:string|null;final:number;selected:'coupon'|'subscription'|'none'};
 
 export class BookingService {
- constructor(private readonly db:DatabaseClient,private readonly repo:BookingRepository){}
+ constructor(private readonly env:AppEnv,private readonly db:DatabaseClient,private readonly repo:BookingRepository){}
  private async serviceFor(input:{serviceId?:string|null|undefined;isCustomService?:boolean|undefined;customServiceDemand?:string|null|undefined},tx:QueryableDatabase=this.db){
   let service:any=null;if(input.serviceId)service=await this.repo.getService(input.serviceId,tx);
   const demand=(input.customServiceDemand??'').trim();
@@ -66,23 +67,25 @@ export class BookingService {
  async createGuest(input:GuestBookingCreateInput){
   const today=new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Kolkata',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());if(input.preferredDate<today)throw new AppError(400,'BOOKING_DATE_PAST','Preferred date cannot be in the past');
   const phone=input.phone.trim();
+  // HMAC of (phone, requestId): deterministic so a retry after a lost response can re-derive the tracking token; only its sha256 is stored.
+  const token=createHmac('sha256',this.env.JWT_ACCESS_SECRET).update(`guest-booking:v1:${phone}:${input.requestId}`).digest('hex');
+  const hash=createHash('sha256').update(token).digest('hex');
   const created=await this.db.withTransaction(async tx=>{
    await tx.query(`SELECT pg_advisory_xact_lock(hashtextextended($1,0))`,[`guest-booking:${phone}`]);
-   const old=await this.repo.findGuestIdempotent(phone,input.requestId,tx);if(old)return {booking:old,idempotent:true,token:null as string|null};
+   const old=await this.repo.findGuestIdempotent(phone,input.requestId,tx);if(old)return {booking:old,idempotent:true};
    const service=await this.serviceFor({serviceId:input.serviceId??null,isCustomService:input.isCustomService??false,customServiceDemand:input.customServiceDemand??input.description??null},tx);
    const demand=(input.customServiceDemand??input.description??'').trim();
    if(await this.repo.findActiveGuestDuplicate(phone,service.title,input.preferredDate,tx))throw new AppError(409,'BOOKING_DUPLICATE','A booking for this service and date already exists for this phone number');
    if(await this.repo.countActiveGuestBookings(phone,tx)>=3)throw new AppError(409,'GUEST_BOOKING_LIMIT','Too many active bookings for this phone number. Please call us directly.');
-   const token=randomBytes(32).toString('hex');const hash=createHash('sha256').update(token).digest('hex');
    const base=service.show_visit_charge?money(Number(service.service_charge??0)):0;
    const b=await this.repo.createFinancial({userId:null,requestId:input.requestId,serviceId:service.id??null,name:input.name,phone,email:input.email??null,address:input.address,exactLocation:input.exactLocation??null,serviceType:service.title,customServiceDemand:service.id?null:demand,preferredDate:input.preferredDate,preferredTime:input.preferredTime,description:input.description??null,isSwitchWorking:input.isSwitchWorking??null,hasOldFan:input.hasOldFan??null,isElectricitySupplyOn:input.isElectricitySupplyOn??null,originalAmount:base,finalAmount:base,trackingTokenHash:hash,couponId:null,couponCode:null,couponDiscount:0,userSubscriptionId:null,subscriptionDiscount:0,benefit:null},tx);
    if (!b) throw new Error('Guest booking creation returned no row');
-   return {booking:b,idempotent:false,token};
+   return {booking:b,idempotent:false};
   },{isolationLevel:'READ COMMITTED'});
   if (!created.booking) throw new Error('Guest booking transaction returned no row');
-  if(created.idempotent)return {...this.map(created.booking),idempotent:true};
+  if(created.idempotent)return {...this.map(created.booking as any),idempotent:true,tracking_token:token};
   const assignment=await this.repo.autoAssign(created.booking.id).catch(()=>({kind:'none'} as any));
-  return {...this.map(created.booking),tracking_token:created.token,idempotent:false,technician:assignment.kind==='ok'?assignment.technician:null};
+  return {...this.map(created.booking),tracking_token:token,idempotent:false,technician:assignment.kind==='ok'?assignment.technician:null};
  }
  async get(userId:string,id:string){const b=await this.repo.getOwn(userId,id);if(!b)throw new AppError(404,'BOOKING_NOT_FOUND','Booking not found');return this.map(b);}
  async cancel(userId:string,id:string){const r=await this.repo.cancelOwn(userId,id);if(r.kind==='missing')throw new AppError(404,'BOOKING_NOT_FOUND','Booking not found');if(r.kind==='state')throw new AppError(409,'BOOKING_CANNOT_CANCEL','Booking can no longer be cancelled online');return {cancelled:true};}

@@ -22,6 +22,18 @@ import {
   withTimeout,
 } from "@/utils/bookingUtils";
 
+const TURNSTILE_SITE_KEY = (import.meta.env.VITE_TURNSTILE_SITE_KEY as string | undefined) || "";
+const TURNSTILE_ENABLED = Boolean(TURNSTILE_SITE_KEY);
+
+declare global {
+  interface Window {
+    turnstile?: {
+      render: (el: HTMLElement, opts: { sitekey: string; callback?: (token: string) => void; "expired-callback"?: (code?: unknown) => void }) => string;
+      remove: (id: string) => void;
+    };
+  }
+}
+
 const BookingForm = () => {
   const [params] = useSearchParams();
   const preselected = params.get("service") || "";
@@ -36,6 +48,10 @@ const BookingForm = () => {
   const { activeSubscription, benefits } = useSubscription();
   const abortControllerRef = useRef<AbortController | null>(null);
   const requestIdRef = useRef<string>(crypto.randomUUID());
+  const formTsRef = useRef<number>(Date.now());
+  const turnstileBoxRef = useRef<HTMLDivElement | null>(null);
+  const honeypotRef = useRef<HTMLInputElement | null>(null);
+  const [captchaToken, setCaptchaToken] = useState("");
 
   const [couponCode, setCouponCode] = useState(preselectedOffer);
   const [applyingCoupon, setApplyingCoupon] = useState(false);
@@ -68,6 +84,41 @@ const BookingForm = () => {
     const errs = validateBookingForm(form, { requireEmail: true, requireTime: true, requireDate: true });
     setFieldErrors(errs);
   }, [form]);
+
+  // A fresh timing token + captcha slot each time the form reopens after a completion
+  useEffect(() => { if (!done) { formTsRef.current = Date.now(); setCaptchaToken(""); } }, [done]);
+  const [captchaResetKey, setCaptchaResetKey] = useState(0);
+
+  // Cloudflare Turnstile widget (guests only, only when VITE_TURNSTILE_SITE_KEY is set)
+  useEffect(() => {
+    if (user || done || !TURNSTILE_ENABLED) return;
+    let removed = false;
+    let widgetId = "";
+    const renderWidget = () => {
+      if (removed || !window.turnstile || !turnstileBoxRef.current) return;
+      if (widgetId) window.turnstile.remove(widgetId);
+      setCaptchaToken("");
+      widgetId = window.turnstile.render(turnstileBoxRef.current, {
+        sitekey: TURNSTILE_SITE_KEY,
+        callback: (token: string) => setCaptchaToken(token),
+        "expired-callback": () => setCaptchaToken(""),
+      });
+    };
+    if (window.turnstile) renderWidget();
+    else {
+      const existing = document.querySelector<HTMLScriptElement>('script[src*="challenges.cloudflare.com/turnstile"]');
+      if (existing) existing.addEventListener("load", renderWidget, { once: true });
+      else {
+        const script = document.createElement("script");
+        script.src = "https://challenges.cloudflare.com/turnstile/v0/api.js";
+        script.async = true;
+        script.defer = true;
+        script.onload = renderWidget;
+        document.head.appendChild(script);
+      }
+    }
+    return () => { removed = true; if (widgetId && window.turnstile) { try { window.turnstile.remove(widgetId); } catch { /* already removed */ } } };
+  }, [user, done, captchaResetKey]);
 
   // ── Date validation: reject any date before today ──
   const handleDateChange = (val: string) => {
@@ -242,10 +293,10 @@ const BookingForm = () => {
     try {
       const selectedService = bookingServices.find((svc) => svc.title === form.service_type);
       if (!selectedService?.id && form.service_type !== "Custom Service") throw new Error("Please select a valid service");
-      if (!user && (!selectedService?.id || form.service_type === "Custom Service")) {
-        throw new Error("Select a listed service to book without signing in. Custom requests require an account.");
+      if (!user && TURNSTILE_ENABLED && !captchaToken) {
+        throw new Error("Please complete the security check before submitting.");
       }
-      const bookingData = await withTimeout(
+      const bookingData = await withTimeout<{ id: string; tracking_token?: string }>(
         user ? createAuthoritativeServiceBooking(form, {
           serviceId: selectedService?.id || "",
           couponCode: appliedCoupon?.success ? couponCode : undefined,
@@ -254,15 +305,23 @@ const BookingForm = () => {
           requestId: requestIdRef.current,
         }) : createGuestBooking({
           requestId: requestIdRef.current,
-          serviceId: selectedService!.id,
+          serviceId: selectedService?.id || null,
+          isCustomService: form.service_type === "Custom Service",
           name: form.name.trim(),
           phone: form.phone.trim(),
-          email: form.email.trim(),
+          email: form.email.trim() || null,
           address: form.address.trim(),
           exactLocation: form.exact_location?.trim() || null,
           preferredDate: form.preferred_date,
           preferredTime: form.preferred_time,
-          description: form.description?.trim() || null,
+          description: form.service_type === "Custom Service" ? form.custom_service_demand.trim() : form.description?.trim() || null,
+          customServiceDemand: form.custom_service_demand.trim() || null,
+          isSwitchWorking: form.is_switch_working || null,
+          hasOldFan: form.has_old_fan || null,
+          isElectricitySupplyOn: form.is_electricity_supply_on || null,
+          website: honeypotRef.current?.value ?? "",
+          formTs: formTsRef.current,
+          captchaToken: captchaToken || null,
         }),
         17000,
         "booking-create"
@@ -303,6 +362,13 @@ const BookingForm = () => {
     } catch (error: any) {
       const isTimeout = error?.message?.includes("TIMEOUT");
       const isDuplicate = error?.code === "23505";
+      if (error?.code === "BOOKING_FORM_STALE" || error?.code === "CAPTCHA_REQUIRED") {
+        formTsRef.current = Date.now();
+      }
+      if (error?.code === "CAPTCHA_FAILED") {
+        formTsRef.current = Date.now();
+        setCaptchaResetKey((k) => k + 1); // Turnstile tokens are single-use; re-render a fresh widget
+      }
       toast.error(
         isDuplicate ? "This booking already exists." :
         isTimeout ? "Request timed out. Please retry." :
@@ -840,10 +906,25 @@ const BookingForm = () => {
 
                 {!user && (
                   <p className="text-sm text-zinc-500 dark:text-zinc-400">
-                    No account needed for listed services. Coupons, subscriptions, and custom services require sign-in.
+                    No account needed. Coupons and subscriptions require sign-in.
                     Save your private tracking code after submitting.
                   </p>
                 )}
+                {!user && TURNSTILE_ENABLED && (
+                  <div className="flex justify-center">
+                    <div ref={turnstileBoxRef} className="min-h-[65px]" />
+                  </div>
+                )}
+                {/* Honeypot — invisible to humans, bots fill it and get rejected */}
+                <input
+                  type="text"
+                  name="website"
+                  ref={honeypotRef}
+                  autoComplete="off"
+                  tabIndex={-1}
+                  aria-hidden="true"
+                  className="absolute -left-[9999px] -top-[9999px] h-px w-px opacity-0"
+                />
                 {/* Submit */}
                 <button
                   type="submit"
